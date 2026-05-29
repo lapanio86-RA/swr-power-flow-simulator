@@ -137,7 +137,7 @@ Baixe ou clone o repositório e abra o arquivo HTML no navegador.
 Não é necessário instalar nada.
 
 ```text
-simulador_fluxo_potencia_swr_xp_maxwell_nota10.html
+simulador.html
 ```
 
 Depois configure:
@@ -154,18 +154,6 @@ Depois configure:
 Clique em **Calcular** para ver os resultados.
 
 Clique em **Animar** para acompanhar a explicação passo a passo.
-
-## Tecnologias
-
-- HTML
-- CSS
-- JavaScript puro
-
-Não há dependências externas.
-
-## Visual
-
-A interface usa um estilo oldschool inspirado em softwares clássicos, com aparência simples, técnica e sem elementos visuais modernos exagerados.
 
 ## Referência conceitual
 
