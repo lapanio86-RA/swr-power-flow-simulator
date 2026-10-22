@@ -55,3 +55,27 @@ test('index and legacy filename are identical standalone entry points',()=>{
   const root=path.join(__dirname,'..');
   assert.equal(fs.readFileSync(path.join(root,'index.html'),'utf8'),fs.readFileSync(path.join(root,'simulador.html'),'utf8'));
 });
+
+ test('didactic flow keeps previous steps during animation and shows the full sequence on calculate',()=>{
+  const app=boot();
+  app.click('calculateButton');
+  const complete=app.elements.timeline.textContent;
+  assert.match(complete,/1\/6 — Entrada:/);
+  assert.match(complete,/6\/6 — Balanço final/);
+  app.click('animateButton');
+  assert.equal(app.elements.timeline.textContent,'');
+  let previous='';
+  [...app.timers.values()].forEach((fn,i)=>{
+    fn();
+    const current=app.elements.timeline.textContent;
+    assert.ok(current.startsWith(previous));
+    assert.equal((current.match(/\d\/6 —/g)||[]).length,i+1);
+    previous=current;
+  });
+  assert.equal(previous,complete);
+  app.click('animateButton');
+  assert.equal(app.elements.timeline.textContent,'');
+  app.click('calculateButton');
+  assert.equal(app.timers.size,0);
+  assert.equal(app.elements.timeline.textContent,complete);
+});

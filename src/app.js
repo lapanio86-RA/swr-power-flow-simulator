@@ -73,7 +73,7 @@ function renderResults(r){
     : 'Uma ida e uma volta: a fonte casada absorve o retorno. Não se aplica outra redução por SWR à potência incidente.';
   $('radioPowerLabel').textContent=watts(r.powerConfiguredW);$('antennaSWRLabel').textContent=`SWR ${fmt(r.swrLoad)}:1`;
   $('powerLabel').textContent=`${watts(r.acceptedW)} na carga`;$('wave').textContent='→';
-  $('timeline').textContent='Cálculo atualizado. Animar mostra as parcelas de energia; o balanço acima é o resultado em regime permanente.';
+  $('timeline').textContent=flowSteps(r).map((step,i,steps)=>formatStep(step,i,steps.length)).join('\n\n');
   renderCable(r);renderComparison(r);
 }
 function stopAnimation(){timers.forEach(clearTimeout);timers=[];}
@@ -84,10 +84,9 @@ function calculateAndRender(){
     last=result;$('errorMessage').hidden=true;$('results').hidden=false;renderResults(result);return result;
   }catch(error){last=null;$('errorMessage').textContent=error.message;$('errorMessage').hidden=false;$('results').hidden=true;return null;}
 }
-function runAnimation(){
-  const r=calculateAndRender();if(!r)return;
+function flowSteps(r){
   const first=r.trips[0];
-  const steps=[
+  return [
     ['→',`Entrada: ${watts(first.outgoing)}.`,r.systemMode==='tuner'?'Parcela inicial líquida após o tuner. As demais parcelas são contabilizadas pela série geométrica.':'Onda incidente da fonte casada; o descasamento ainda não foi subtraído.'],
     ['→',`Ida: ${watts(first.heatForward)} de calor.`,`${watts(first.arriveLoad)} chegam à carga na primeira parcela.`],
     ['←',`Carga aceita ${watts(first.accepted)}.`,`${watts(first.reflectedLoad)} são refletidos; refletir não significa dissipar no cabo.`],
@@ -95,7 +94,19 @@ function runAnimation(){
     [r.systemMode==='tuner'?'→':'←',r.systemMode==='tuner'?'As parcelas retornadas continuam no modelo ideal.':'A fonte casada absorve o retorno.',r.systemMode==='tuner'?`A soma analítica entrega ${watts(r.acceptedW)} à carga; o restante vira calor na linha.`:`${watts(r.sourceReturnW)} voltam à fonte, sem serem contados novamente como perda do cabo.`],
     ['→','Balanço final',`${watts(r.acceptedW)} na carga + ${watts(r.cableHeatW)} no cabo + ${watts(r.sourceReturnW)} na fonte = ${watts(r.powerConfiguredW)}.`]
   ];
-  steps.forEach(([arrow,title,body],i)=>timers.push(setTimeout(()=>{$('wave').textContent=arrow;$('powerLabel').textContent=title;$('timeline').textContent=`${i+1}/${steps.length} — ${title}\n${body}`;},i*1300)));
+}
+function formatStep([arrow,title,body],i,total){
+  return `${i+1}/${total} — ${title}\n${body}`;
+}
+function runAnimation(){
+  const r=calculateAndRender();if(!r)return;
+  const steps=flowSteps(r);
+  $('timeline').textContent='';
+  steps.forEach((step,i)=>timers.push(setTimeout(()=>{
+    const [arrow,title]=step;
+    $('wave').textContent=arrow;$('powerLabel').textContent=title;
+    $('timeline').textContent+=(i?'\n\n':'')+formatStep(step,i,steps.length);
+  },i*1300)));
 }
 function resetDefaults(){
   const defaults={powerW:'100',freqMHz:'30',cableType:'8240',lengthM:'10',lengthUnit:'m',lossUnit:'100m',customZ0:'50',systemMode:'tuner',radioSWR:'1',swrReference:'load',swrInput:'2'};
