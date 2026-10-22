@@ -1,846 +1,401 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Simulador de Fluxo de Potência e SWR - Maxwell Simplificado</title>
-<style>
-  :root {
-    --xp-blue: #245edb;
-    --xp-blue-dark: #1746a2;
-    --xp-blue-light: #4c8dff;
-    --xp-gray: #ece9d8;
-    --xp-gray-dark: #aca899;
-    --xp-border-light: #ffffff;
-    --xp-border-mid: #d4d0c8;
-    --xp-border-dark: #716f64;
-    --panel: #f3f1e6;
-    --text: #000000;
-    --green: #1f7a1f;
-    --red: #8b0000;
-    --yellow: #ffffcc;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; }
-  body {
-    font-family: Tahoma, Verdana, Arial, sans-serif;
-    font-size: 12px;
-    color: var(--text);
-    background: #3a6ea5;
-  }
-  .desktop { min-height: 100vh; padding: 22px; }
-  .app {
-    max-width: 1220px;
-    margin: 0 auto;
-    background: var(--xp-gray);
-    border: 2px solid #0831d9;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.35);
-  }
-  .app-header {
-    min-height: 32px;
-    background: linear-gradient(to bottom, var(--xp-blue-light), var(--xp-blue-dark));
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    padding: 7px 10px;
-    font-weight: bold;
-    letter-spacing: 0.1px;
-    user-select: none;
-  }
-  .content { padding: 10px; }
-  .grid {
-    display: grid;
-    grid-template-columns: 360px minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-  }
-  .right-column, .left-column { min-width: 0; }
-  fieldset {
-    border: 2px groove #ffffff;
-    margin: 0 0 10px 0;
-    padding: 10px;
-    background: var(--panel);
-    min-width: 0;
-  }
-  legend {
-    padding: 0 6px;
-    font-weight: bold;
-    color: #001080;
-  }
-  label { display: block; margin: 7px 0 3px; }
-  input, select {
-    width: 100%;
-    min-width: 0;
-    padding: 3px 4px;
-    border: 2px inset #ffffff;
-    background: #ffffff;
-    font-family: Tahoma, Verdana, Arial, sans-serif;
-    font-size: 12px;
-  }
-  input[readonly] { background: #eeeeee; color: #222222; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .unit-row { display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 6px; align-items: center; }
-  .unit { color: #000000; }
-  button {
-    font-family: Tahoma, Verdana, Arial, sans-serif;
-    font-size: 12px;
-    padding: 5px 12px;
-    background: var(--xp-gray);
-    border-top: 2px solid var(--xp-border-light);
-    border-left: 2px solid var(--xp-border-light);
-    border-right: 2px solid var(--xp-border-dark);
-    border-bottom: 2px solid var(--xp-border-dark);
-    cursor: pointer;
-    min-width: 92px;
-  }
-  button:active {
-    border-top: 2px solid var(--xp-border-dark);
-    border-left: 2px solid var(--xp-border-dark);
-    border-right: 2px solid var(--xp-border-light);
-    border-bottom: 2px solid var(--xp-border-light);
-  }
-  .buttons-line { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .note { color: #333333; line-height: 1.35; }
-  .small { font-size: 11px; }
-  .warn { color: var(--red); font-weight: bold; }
-  .ok { color: var(--green); font-weight: bold; }
-  .muted { color: #555; }
-  .hidden { display: none !important; }
-
-  .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .card {
-    background: #ffffff;
-    border-top: 2px solid #ffffff;
-    border-left: 2px solid #ffffff;
-    border-right: 2px solid #808080;
-    border-bottom: 2px solid #808080;
-    padding: 8px;
-    min-height: 72px;
-  }
-  .card-title { font-weight: bold; margin-bottom: 5px; color: #001080; }
-  .card-value { font-size: 15px; font-weight: bold; line-height: 1.25; }
-  .card-caption { margin-top: 3px; color: #333; font-size: 11px; }
-
-  .simple-explain {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-  .step-box {
-    background: #ffffff;
-    border: 1px solid #999999;
-    padding: 8px;
-    min-height: 74px;
-  }
-  .step-title { font-weight: bold; color: #001080; margin-bottom: 4px; }
-  .big-number { font-weight: bold; font-size: 14px; }
-
-  .sim-area {
-    background: #ffffff;
-    border: 2px inset #ffffff;
-    min-height: 270px;
-    position: relative;
-    overflow: hidden;
-    padding: 10px;
-  }
-  .stage {
-    position: relative;
-    height: 170px;
-    margin-top: 6px;
-    background: repeating-linear-gradient(45deg, #ffffff 0, #ffffff 8px, #f7f7f7 8px, #f7f7f7 16px);
-    border: 1px solid #999999;
-    overflow: hidden;
-  }
-  .device {
-    position: absolute;
-    top: 50px;
-    width: 112px;
-    height: 76px;
-    background: #d4d0c8;
-    border-top: 2px solid #ffffff;
-    border-left: 2px solid #ffffff;
-    border-right: 2px solid #555555;
-    border-bottom: 2px solid #555555;
-    text-align: center;
-    font-weight: bold;
-    padding-top: 11px;
-    z-index: 2;
-  }
-  .device .small-line { display: block; margin-top: 6px; font-weight: normal; font-size: 11px; }
-  .radio { left: 18px; }
-  .antenna { right: 18px; }
-  .cable {
-    position: absolute;
-    left: 128px;
-    right: 128px;
-    top: 81px;
-    height: 16px;
-    background: linear-gradient(to bottom, #777777, #222222, #777777);
-    border: 1px solid #000000;
-    z-index: 1;
-  }
-  .wave {
-    position: absolute;
-    top: 66px;
-    width: 36px;
-    height: 44px;
-    border: 2px solid #003399;
-    background: #99ccff;
-    text-align: center;
-    line-height: 38px;
-    font-size: 18px;
-    font-weight: bold;
-    display: none;
-    z-index: 3;
-  }
-  .wave.forward { color: #003399; }
-  .wave.reflected { color: #7b0000; border-color: #7b0000; background: #ffb0a0; }
-  .flow-label {
-    position: absolute;
-    left: 138px;
-    right: 138px;
-    top: 108px;
-    background: #ffffcc;
-    border: 1px solid #999999;
-    padding: 4px 7px;
-    text-align: center;
-    min-height: 29px;
-    z-index: 4;
-  }
-  .top-label {
-    position: absolute;
-    top: 10px;
-    left: 140px;
-    right: 140px;
-    text-align: center;
-    font-size: 11px;
-    line-height: 1.35;
-    color: #000000;
-  }
-  .timeline {
-    margin-top: 10px;
-    background: #ffffe1;
-    border: 1px solid #999999;
-    padding: 8px;
-    min-height: 92px;
-    white-space: pre-line;
-    line-height: 1.35;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #ffffff;
-    border: 2px inset #ffffff;
-    table-layout: fixed;
-  }
-  th, td {
-    border: 1px solid #c0c0c0;
-    padding: 5px 6px;
-    vertical-align: top;
-    word-break: normal;
-    overflow-wrap: anywhere;
-  }
-  th { width: 42%; background: #d4d0c8; text-align: left; font-weight: bold; }
-  td.value { text-align: right; font-weight: bold; }
-  details {
-    background: var(--panel);
-    border: 2px groove #ffffff;
-    padding: 8px 10px;
-    margin-bottom: 10px;
-  }
-  summary { cursor: pointer; font-weight: bold; color: #001080; }
-  .formula-bar {
-    border-top: 1px solid var(--xp-gray-dark);
-    padding: 7px 10px;
-    background: #f3f1e6;
-    color: #001080;
-    line-height: 1.35;
-  }
-  @media (max-width: 980px) {
-    .grid { grid-template-columns: 1fr; }
-    .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  }
-  @media (max-width: 620px) {
-    .desktop { padding: 8px; }
-    .row, .summary-cards, .simple-explain { grid-template-columns: 1fr; }
-    .stage { height: 210px; }
-    .device { width: 96px; }
-    .cable { left: 108px; right: 108px; }
-    .flow-label, .top-label { left: 112px; right: 112px; }
-  }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWR · Fluxo de potência e perdas em coaxial</title>
+<style>*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font:12px Tahoma,Verdana,Arial,sans-serif;color:#161616;background:#73858d}
+.desktop{padding:16px}
+.app{max-width:1400px;margin:auto;background:#d4d0c8;border:2px outset #f6f3e9}
+.app-header{background:#244c73;color:white;font-weight:bold;padding:9px 11px;font-size:13px}
+.toolbar{padding:7px 10px;border-bottom:1px solid #929087;font-size:11px}.toolbar span{float:right}
+.content{padding:12px}.grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:12px;align-items:start}
+.left-column,.right-column{min-width:0}
+fieldset,details{min-width:0;border:2px groove #f5f2e8;background:#e9e6dc;margin:0 0 12px;padding:10px}
+legend,summary{color:#173d61;font-weight:bold}legend{padding:0 6px}summary{cursor:pointer}
+label{display:block;margin:8px 0 4px;font-size:11px;line-height:1.3}
+input,select,button{font:12px Tahoma,Verdana,Arial,sans-serif;border-radius:0}
+input,select{width:100%;min-width:0;background:#fff;padding:5px;border:2px inset #fff;color:#111}
+input[readonly]{background:#dedbd3;color:#333}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+button{padding:6px 12px;cursor:pointer;border:2px outset #f4f2e8;background:#d4d0c8;color:#111}
+button:active{border-style:inset}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #345b7c;outline-offset:2px}
+.buttons-line{display:flex;gap:8px;flex-wrap:wrap}
+.note{font-size:11px;color:#343434;line-height:1.5;margin:8px 0}
+.notice{background:#fff9d9;border:1px solid #ad9769;padding:7px;font-size:11px;line-height:1.4}
+.error{background:#fff1e8;border:2px solid #a14a35;padding:10px;color:#782318;font-weight:bold;line-height:1.5}
+[hidden]{display:none!important}
+.summary-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.card{background:#fff;border:2px inset #f4f2e8;padding:8px}.card-title{color:#173d61;font-weight:bold;font-size:11px;min-height:28px}
+.card-value{font-size:18px;font-weight:bold;margin:4px 0;white-space:nowrap}.card-caption{font-size:10px;line-height:1.4;color:#4b4b4b}
+.energy-bar{display:flex;height:17px;border:1px solid #666;margin-top:12px;background:#ddd}
+#energyLoad{background:#617e56}#energyHeat{background:#ad7548}#energyReturn{background:#637d94}
+.simple-explain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.step-box{padding:8px;background:#fff;border:1px solid #aaa;line-height:1.45}.step-title{font-weight:bold;color:#173d61;margin-bottom:5px}
+.stage{display:flex;align-items:center;gap:8px;background:#fff;border:2px inset #fff;padding:12px;min-height:110px}
+.device{width:100px;flex-shrink:0;text-align:center;padding:10px 5px;background:#d4d0c8;border:2px outset white;font-weight:bold}.device span{display:block;font-size:10px;font-weight:normal;margin-top:6px}
+.flow{min-width:0;flex:1;text-align:center;font-size:11px;line-height:1.4}#wave{font-size:24px;color:#284d6b}#powerLabel{overflow-wrap:anywhere}
+.timeline{white-space:pre-line;padding:8px;border:1px solid #aaa;margin-top:7px;background:#fffce5;line-height:1.5;min-height:55px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;background:white}
+th,td{border:1px solid #aaa;padding:6px;text-align:left;line-height:1.4}th{background:#d4d0c8;font-weight:normal}
+.results-table th{width:55%}.results-table td{text-align:right}.table-scroll{overflow-x:auto;max-height:340px}
+.data-table th{position:sticky;top:0}.data-table td:not(:first-child){text-align:right;white-space:nowrap}.data-table caption{text-align:left;padding:4px;color:#333}
+.formula-bar{border-top:1px solid #aaa;padding:9px 12px;background:#e9e6dc;color:#173d61;font-size:11px;line-height:1.5}
+a{color:#163d80}#sourceInfo{overflow-wrap:anywhere}
+@media(max-width:1100px){.summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){.grid{grid-template-columns:minmax(0,1fr)}.desktop{padding:6px}.toolbar span{display:none}.content{padding:8px}}
+@media(max-width:420px){.simple-explain{grid-template-columns:1fr}.stage{padding:6px;gap:4px}.device{width:72px}.card-value{font-size:16px}}
 </style>
 </head>
 <body>
-<div class="desktop">
-  <div class="app">
-    <div class="app-header">Simulador de Fluxo de Potência e SWR — Modelo Maxwell Simplificado</div>
-    <div class="content">
-      <div class="grid">
-        <div class="left-column">
-          <fieldset>
-            <legend>Rádio e frequência</legend>
-            <div class="row">
-              <div>
-                <label for="powerW">Potência configurada no rádio</label>
-                <div class="unit-row">
-                  <input id="powerW" type="text" inputmode="decimal" value="100,0" />
-                  <span class="unit">W</span>
-                </div>
-              </div>
-              <div>
-                <label for="freqMHz">Frequência</label>
-                <div class="unit-row">
-                  <input id="freqMHz" type="text" inputmode="decimal" value="30,0" />
-                  <span class="unit">MHz</span>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Cabo</legend>
-            <label for="cableType">Tipo de cabo</label>
-            <select id="cableType">
-              <option value="RG-58">RG-58</option>
-              <option value="RG-213">RG-213</option>
-              <option value="LMR-400">LMR-400</option>
-              <option value="RG-6">RG-6</option>
-              <option value="Custom">Personalizado</option>
-            </select>
-            <div class="row">
-              <div>
-                <label for="lengthM">Comprimento</label>
-                <div class="unit-row">
-                  <input id="lengthM" type="text" inputmode="decimal" value="10,0" />
-                  <span class="unit">m</span>
-                </div>
-              </div>
-              <div>
-                <label for="lossDb100m">Perda do cabo casado</label>
-                <div class="unit-row">
-                  <input id="lossDb100m" type="text" inputmode="decimal" value="5,00" />
-                  <span class="unit">dB/100 m</span>
-                </div>
-              </div>
-            </div>
-            <p class="note small">Esta é a perda normal da linha se ela estivesse casada. O SWR acrescenta perda porque parte da energia faz viagens extras.</p>
-          </fieldset>
-
-          <fieldset>
-            <legend>Configuração do sistema</legend>
-            <label for="systemMode">Como o rádio está ligado?</label>
-            <select id="systemMode">
-              <option value="tuner">Com tuner/transmatch na entrada da linha</option>
-              <option value="direct">Sem tuner: rádio ligado direto ao cabo</option>
-            </select>
-            <p class="note small" id="modeNote"></p>
-
-            <div id="radioSWRBox">
-              <label for="radioSWR">SWR residual visto pelo rádio na entrada do tuner</label>
-              <input id="radioSWR" type="text" inputmode="decimal" value="1,0" />
-              <p class="note small">Use 1,0 para tuner ideal. Se o acoplador não zera o SWR, coloque aqui o SWR residual visto pelo rádio no lado de entrada do tuner. Este número não é o SWR existente no cabo depois do tuner.</p>
-            </div>
-            <p class="note small"><b>Resumo dos dois SWRs:</b> o SWR residual é o que o rádio enxerga antes do tuner; o SWR da linha é o que existe depois do tuner, no cabo e na antena.</p>
-          </fieldset>
-
-          <fieldset>
-            <legend>SWR existente no cabo / antena</legend>
-            <label for="swrReference">Onde este SWR foi medido?</label>
-            <select id="swrReference">
-              <option value="line">Na entrada da linha, lado do cabo/tuner</option>
-              <option value="load">Na antena/carga</option>
-            </select>
-            <label for="swrInput">Valor de SWR</label>
-            <input id="swrInput" type="text" inputmode="decimal" value="2,0" />
-            <p class="note small">Este é o SWR do lado direito do tuner: cabo + antena. Ele pode ser alto mesmo quando o rádio vê 1,0:1 na entrada do tuner.</p>
-            <div class="buttons-line">
-              <button type="button" onclick="calculateAndRender()">Calcular</button>
-              <button type="button" onclick="runAnimation()">Animar</button>
-              <button type="button" onclick="resetDefaults()">Limpar</button>
-            </div>
-          </fieldset>
+<div class="desktop"><main class="app">
+  <header class="app-header">SWR Power Flow Simulator — perdas de linha e balanço de potência</header>
+  <div class="toolbar">Rádio / tuner → linha de transmissão → carga <span>Calculadora offline · dados com referência</span></div>
+  <div class="content grid">
+    <section class="left-column" aria-label="Parâmetros">
+      <fieldset><legend>1. Fonte e frequência</legend>
+        <div class="row">
+          <div><label for="powerW">Potência incidente disponível (W)</label><input id="powerW" inputmode="decimal" value="100"></div>
+          <div><label for="freqMHz">Frequência (MHz)</label><input id="freqMHz" inputmode="decimal" value="30"></div>
         </div>
-
-        <div class="right-column">
-          <fieldset>
-            <legend>Resumo em quatro números</legend>
-            <div class="summary-cards">
-              <div class="card">
-                <div class="card-title">1. Configurada</div>
-                <div class="card-value" id="cardConfigured">---</div>
-                <div class="card-caption">ajuste feito no rádio</div>
-              </div>
-              <div class="card">
-                <div class="card-title">2. Transferida</div>
-                <div class="card-value" id="cardSystemIn">---</div>
-                <div class="card-caption" id="cardSystemInCaption">ao tuner / linha</div>
-              </div>
-              <div class="card">
-                <div class="card-title">3. Entregue à antena</div>
-                <div class="card-value" id="cardAntenna">---</div>
-                <div class="card-caption">resultado útil do sistema</div>
-              </div>
-              <div class="card">
-                <div class="card-title">4. Calor no cabo</div>
-                <div class="card-value" id="cardCableHeat">---</div>
-                <div class="card-caption">perda real na linha</div>
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Leitura simples</legend>
-            <div class="simple-explain" id="simpleExplain"></div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Fluxo de potência</legend>
-            <div class="sim-area">
-              <div class="stage" id="stage">
-                <div class="top-label" id="topLabel">---</div>
-                <div class="device radio">Rádio<br><span class="small-line" id="radioPowerLabel">---</span></div>
-                <div class="cable"></div>
-                <div class="device antenna">Antena<br><span class="small-line" id="antennaSWRLabel">---</span></div>
-                <div class="wave forward" id="forwardWave">→</div>
-                <div class="wave reflected" id="reflectedWave">←</div>
-                <div class="flow-label" id="powerLabel">Clique em Calcular e depois em Animar.</div>
-              </div>
-              <div class="timeline" id="timeline">Aguardando simulação...</div>
-            </div>
-          </fieldset>
-
-          <details open>
-            <summary>Resultados principais</summary>
-            <table style="margin-top:8px"><tbody id="mainResultsTable"></tbody></table>
-          </details>
-
-          <details>
-            <summary>Detalhes avançados: primeiras viagens / múltiplas reflexões</summary>
-            <div class="note small" id="advancedNote" style="margin:8px 0"></div>
-            <table><tbody id="tripTable"></tbody></table>
-          </details>
+        <p class="note">Fonte ideal casada à impedância de referência. Não simula foldback nem o controle de potência de um rádio real.</p>
+      </fieldset>
+      <fieldset><legend>2. Cabo e atenuação</legend>
+        <label for="cableType">Fabricante / modelo</label><select id="cableType"></select>
+        <div class="row">
+          <div><label for="lengthM">Comprimento</label><input id="lengthM" inputmode="decimal" value="10"></div>
+          <div><label for="lengthUnit">Unidade de comprimento</label><select id="lengthUnit"><option value="m">Metros (m)</option><option value="ft">Pés (ft)</option></select></div>
         </div>
+        <div class="row">
+          <div><label for="lossDb100m">Atenuação casada nesta frequência</label><input id="lossDb100m" inputmode="decimal" value="0" readonly></div>
+          <div><label for="lossUnit">Unidade de atenuação</label><select id="lossUnit"><option value="100m">dB / 100 m</option><option value="100ft">dB / 100 ft</option></select></div>
+        </div>
+        <div id="customZ0Box" hidden><label for="customZ0">Impedância do cabo personalizado (Ω)</label><input id="customZ0" inputmode="decimal" value="50"></div>
+        <p id="cableMeta" class="note"></p>
+        <p id="cableWarning" class="notice" hidden></p>
+        <details><summary>Tabela / fórmula e origem dos dados</summary>
+          <p id="sourceInfo" class="note"></p>
+          <div class="table-scroll"><table class="data-table"><caption>Atenuação nominal casada — pontos publicados</caption><thead><tr><th>MHz</th><th>dB/100 ft</th><th>dB/100 m</th></tr></thead><tbody id="sourceTable"></tbody></table></div>
+        </details>
+      </fieldset>
+      <fieldset><legend>3. Casamento e SWR</legend>
+        <label for="systemMode">Ligação da fonte</label><select id="systemMode"><option value="tuner">Tuner ideal na entrada da linha</option><option value="direct">Direto: fonte casada absorve o retorno</option></select>
+        <p id="modeNote" class="note"></p>
+        <div id="radioSWRBox"><label for="radioSWR">SWR residual antes do tuner</label><input id="radioSWR" inputmode="decimal" value="1"></div>
+        <label for="swrReference">Referência do SWR na linha</label><select id="swrReference"><option value="load">Na carga / antena</option><option value="line">Na entrada do cabo</option></select>
+        <label for="swrInput">SWR (≥ 1)</label><input id="swrInput" inputmode="decimal" value="2">
+      </fieldset>
+      <div class="buttons-line"><button id="calculateButton" type="button">Calcular</button><button id="animateButton" type="button">Animar</button><button id="resetButton" type="button">Restaurar</button></div>
+      <p class="note">Aceita vírgula ou ponto decimal. Tabelas são específicas do modelo, não de qualquer cabo com a mesma designação RG.</p>
+    </section>
+    <section class="right-column" aria-label="Resultados">
+      <p id="errorMessage" role="alert" class="error" hidden></p>
+      <div id="results">
+        <fieldset><legend>Balanço de potência</legend>
+          <p id="balanceCaption" class="note" role="status" aria-live="polite"></p>
+          <div class="summary-cards">
+            <div class="card"><div class="card-title">Entregue à carga</div><div id="cardAntenna" class="card-value">—</div><div class="card-caption">não é necessariamente radiada</div></div>
+            <div class="card"><div class="card-title">Calor no cabo</div><div id="cardCableHeat" class="card-value">—</div><div class="card-caption">dissipação na linha</div></div>
+            <div class="card"><div class="card-title">Retorno à fonte</div><div id="cardReturned" class="card-value">—</div><div class="card-caption">absorvido pela fonte ideal</div></div>
+            <div class="card"><div class="card-title">Perda real da linha</div><div id="cardLineLoss" class="card-value">—</div><div class="card-caption">entrada líquida → carga</div></div>
+          </div>
+          <div class="energy-bar" aria-hidden="true"><span id="energyLoad"></span><span id="energyHeat"></span><span id="energyReturn"></span></div>
+          <p id="energyLegend" class="note"></p>
+        </fieldset>
+        <fieldset><legend>De onde vêm as perdas?</legend><div id="simpleExplain" class="simple-explain"></div></fieldset>
+        <fieldset><legend>Fluxo didático</legend>
+          <div class="stage"><div class="device">Fonte<span id="radioPowerLabel"></span></div><div class="flow"><div id="wave" aria-hidden="true">→</div><div id="powerLabel"></div></div><div class="device">Carga<span id="antennaSWRLabel"></span></div></div>
+          <div id="timeline" class="timeline" role="status" aria-live="polite"></div>
+        </fieldset>
+        <details open><summary>Resultados e referências de potência</summary><table class="results-table"><tbody id="mainResultsTable"></tbody></table></details>
+        <details><summary>Comparar cabos nas mesmas condições</summary><p class="note">Mesmo comprimento, frequência e SWR na carga. Fonte ideal/tuner e SWR referidos ao Z₀ de cada cabo; trocar por um cabo de 75 Ω não mantém automaticamente o casamento de um sistema de 50 Ω.</p><div class="table-scroll"><table class="data-table"><thead><tr><th>Cabo / Z₀</th><th>dB/100 m</th><th>Perda casada</th><th>Perda da linha c/ SWR</th><th>Eficiência da linha</th></tr></thead><tbody id="comparisonTable"></tbody></table></div></details>
+        <details><summary>Parcelas de energia / primeiras viagens</summary><p id="advancedNote" class="note"></p><div class="table-scroll"><table class="data-table"><thead><tr><th>Viagem</th><th>Ida</th><th>Na carga</th><th>Aceita</th><th>Refletida</th><th>Volta</th></tr></thead><tbody id="tripTable"></tbody></table></div></details>
       </div>
-    </div>
-    <div class="formula-bar" id="formulaBar">---</div>
+      <details><summary>Premissas, fórmulas e referências</summary>
+        <p class="note">Modelo escalar de linha com Z₀ real: Γ = (SWR−1)/(SWR+1), a = 10^(−L/10) e η = a(1−|Γcarga|²)/(1−a²|Γcarga|²). Perda dissipativa adicional = −10 log₁₀(η) − L. O SWR informado deve usar a impedância do cabo como referência.</p>
+        <p class="note">Tuner sem perdas e sem limite de casamento. Parcelas de energia ilustram a série geométrica; não são uma simulação das ondas de RF no tempo. Não inclui fase, impedância complexa, conectores, baluns, temperatura, envelhecimento, perdas do tuner ou limites térmicos. Potência aceita na carga não é eficiência de radiação.</p>
+        <p class="note">Exemplos de calculadoras: <a href="https://portal.powertec.com.au/operations/tools-calculators/coaxial-cable-loss-calculator" target="_blank" rel="noopener">Powertec</a> · <a href="https://www.qsl.net/co8tw/Coax_Calculator.htm" target="_blank" rel="noopener">QSL / CO8TW</a>. Cadastros e referência de potência podem diferir. Dados numéricos dos cabos: fichas do fabricante mostradas na seção do cabo.</p>
+      </details>
+    </section>
   </div>
-</div>
+  <footer class="formula-bar">Potência incidente = carga + calor na linha + retorno à fonte. Potência refletida não é, por si só, calor no cabo.</footer>
+</main></div>
+<script>(function(root){
+'use strict';
+// Attenuation numbers are factual manufacturer data, in dB/100 ft.
+// 100 ft = 30.48 m exactly. Never relabel these as dB/100 m.
+const verified='2026-10-22';
+const belden=(part,name,z0,points)=>({id:part,name,manufacturer:'Belden',z0,kind:'table',points,unit:'dB/100 ft',range:[points[0][0],points.at(-1)[0]],verified,source:`https://catalog.belden.com/techdata/EN/${part}_techdata.pdf`,method:'Interpolação log-log entre pontos nominais do fabricante; sem extrapolação.'});
+const lmr=(id,k1,k2,max,source,points)=>({id,name:id,manufacturer:'Times Microwave Systems',z0:50,kind:'coefficients',k1,k2,points,unit:'dB/100 ft',range:[1,max],publishedRange:[30,max],verified,source,method:'k1 × √f + k2 × f, com f em MHz. Abaixo de 30 MHz: extrapolação da fórmula publicada.'});
+const cables=[
+  belden('8240','RG-58 / Belden 8240',50,[[1,.3],[10,1.1],[50,2.5],[100,3.8],[200,5.6],[400,8.4],[700,11.7],[900,13.7],[1000,14.5]]),
+  belden('9258','RG-8X / Belden 9258',50,[[1,.3],[10,.9],[50,2.1],[100,3.1],[200,4.5],[400,6.6],[700,9.1],[900,10.7],[1000,11.2]]),
+  belden('8267','RG-213 / Belden 8267',50,[[1,.17],[10,.55],[50,1.3],[100,1.9],[200,2.7],[400,4.1],[700,6.5],[900,7.6],[1000,8],[4000,21.5]]),
+  belden('1694A','RG-6 / Belden 1694A (75 Ω)',75,[[1,.24],[3.58,.44],[5,.52],[6,.57],[7,.61],[10,.71],[12,.78],[25,1.08],[67.5,1.65],[71.5,1.69],[88.5,1.86],[100,1.95],[135,2.24],[143,2.3],[180,2.57],[270,3.17],[360,3.69],[540,4.5],[720,5.3],[750,5.4],[1000,6.3],[1500,7.8],[2000,9.2],[2250,9.8],[3000,11.5],[4500,14.5],[6000,17.7]]),
+  lmr('LMR-240',.242080,.000330,8000,'https://timesmicrowave.com/wp-content/uploads/2022/06/lmr-240-datasheet.pdf',[[30,1.3],[50,1.7],[150,3],[220,3.7],[450,5.3],[900,7.6],[1500,9.9],[1800,10.9],[2000,11.5],[2500,12.9],[5800,20.4],[8000,24.3]]),
+  lmr('LMR-400',.122290,.000260,8000,'https://timesmicrowave.com/wp-content/uploads/2022/06/lmr-400-datasheet.pdf',[[30,.7],[50,.9],[150,1.5],[220,1.9],[450,2.7],[900,3.9],[1500,5.1],[1800,5.7],[2000,6],[2500,6.8],[5800,10.8],[8000,13]]),
+  lmr('LMR-400-UF',.146748,.000312,5800,'https://timesmicrowave.com/wp-content/uploads/2022/06/lmr-400-uf-datasheet-1.pdf',[[30,.8],[50,1.1],[150,1.8],[220,2.2],[450,3.3],[900,4.7],[1500,6.2],[1800,6.8],[2000,7.2],[2500,8.1],[5800,13]]),
+  lmr('LMR-600',.075550,.000260,8000,'https://timesmicrowave.com/wp-content/uploads/2022/03/lmr-600-coax-cables-datasheet.pdf',[[30,.4],[50,.5],[150,1],[220,1.2],[450,1.7],[900,2.5],[1500,3.3],[1800,3.7],[2000,3.9],[2500,4.4],[5800,7.3],[8000,8.8]])
+];
+for(const cable of cables){
+  cable.points.forEach(Object.freeze);Object.freeze(cable.points);Object.freeze(cable.range);
+  if(cable.publishedRange)Object.freeze(cable.publishedRange);
+  Object.freeze(cable);
+}
+const api=Object.freeze({cables:Object.freeze(cables),verified});
+if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SWRCables=api;
+})(globalThis);
 
-<script>
-const cableDatabase = {
-  "RG-58": [[30, 5.0], [50, 6.7], [100, 9.5], [146, 11.0], [220, 14.2], [400, 21.0], [450, 22.5]],
-  "RG-213": [[30, 2.2], [50, 3.1], [100, 4.8], [146, 6.0], [220, 7.8], [400, 11.8], [450, 12.8]],
-  "LMR-400": [[30, 1.3], [50, 1.8], [100, 2.7], [146, 3.3], [220, 4.4], [400, 6.8], [450, 7.3]],
-  "RG-6": [[30, 1.8], [50, 2.4], [100, 3.6], [146, 4.5], [220, 5.8], [400, 8.6], [450, 9.2]]
-};
-
-let last = null;
-let animationTimers = [];
-const nfCache = {};
-
-function formatter(digits) {
-  const key = String(digits);
-  if (!nfCache[key]) {
-    nfCache[key] = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-  }
-  return nfCache[key];
+(function(root){
+'use strict';
+const catalog=typeof module!=='undefined'&&module.exports ? require('./cables.js') : root.SWRCables;
+const FT_TO_M=0.3048;
+function number(value,label,min,max){
+  if(typeof value!=='number'||!Number.isFinite(value)||value<min||value>max)
+    throw new RangeError(`${label}: informe um número entre ${min} e ${max}.`);
+  return value;
 }
-function fmt(n, digits = 2) {
-  if (!Number.isFinite(n)) return '---';
-  return formatter(digits).format(n);
+function parseNumber(value){
+  if(typeof value==='number')return Number.isFinite(value)?value:NaN;
+  let s=String(value).trim();
+  if(/^[+-]?\d{1,3}(?:\.\d{3})+,\d+$/.test(s))s=s.replace(/\./g,'');
+  if(!/^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(s))return NaN;
+  return Number(s.replace(',','.'));
 }
-function wattsToDbm(watts) {
-  if (!Number.isFinite(watts) || watts <= 0) return -Infinity;
-  return 10 * Math.log10(watts * 1000);
+function lengthToMeters(length,unit){
+  number(length,'Comprimento',0,100000);
+  if(!['m','ft'].includes(unit))throw new RangeError('Unidade de comprimento inválida.');
+  return length*(unit==='ft'?FT_TO_M:1);
 }
-function fmtPower(watts, digitsW = 2, digitsDbm = 2) {
-  const wText = fmt(watts, digitsW) + ' W';
-  const dbm = wattsToDbm(watts);
-  const dbmText = Number.isFinite(dbm) ? fmt(dbm, digitsDbm) + ' dBm' : '-∞ dBm';
-  return wText + ' (' + dbmText + ')';
+function lossToDb100m(value,unit){
+  number(value,'Atenuação',0,10000);
+  if(!['100m','100ft'].includes(unit))throw new RangeError('Unidade de atenuação inválida.');
+  return unit==='100ft'?value/FT_TO_M:value;
 }
-function parseBR(value, fallback = 0) {
-  if (typeof value !== 'string') return Number.isFinite(value) ? value : fallback;
-  let s = value.trim().replace(/\s+/g, '');
-  if (!s) return fallback;
-  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-  const n = Number(s);
-  return Number.isFinite(n) ? n : fallback;
+function cableById(id){
+  const cable=catalog.cables.find(c=>c.id===id);
+  if(!cable)throw new RangeError('Cabo não encontrado no catálogo.');
+  return cable;
 }
-function setInputValue(id, value, digits = 2) { document.getElementById(id).value = fmt(value, digits); }
-function interpolateLoss(type, freq) {
-  if (type === 'Custom') return Math.max(0, parseBR(document.getElementById('lossDb100m').value, 0));
-  const points = cableDatabase[type];
-  if (!points) return 0;
-  if (freq <= points[0][0]) return points[0][1];
-  if (freq >= points[points.length - 1][0]) return points[points.length - 1][1];
-  for (let i = 0; i < points.length - 1; i++) {
-    const [f1, l1] = points[i];
-    const [f2, l2] = points[i + 1];
-    if (freq >= f1 && freq <= f2) {
-      const t = (freq - f1) / (f2 - f1);
-      return l1 + t * (l2 - l1);
+function cableLoss(id,freqMHz,customLoss=0,unit='100m'){
+  number(freqMHz,'Frequência (MHz)',0.001,100000);
+  if(id==='Custom')return {db100m:lossToDb100m(customLoss,unit),warning:'Perda manual válida somente na frequência informada.'};
+  const cable=cableById(id),[min,max]=cable.range;
+  if(freqMHz<min||freqMHz>max)throw new RangeError(`${cable.name}: faixa disponível ${min}–${max} MHz. Use um dado medido no modo Personalizado fora dessa faixa.`);
+  let loss;
+  if(cable.kind==='coefficients')loss=cable.k1*Math.sqrt(freqMHz)+cable.k2*freqMHz;
+  else{
+    const exact=cable.points.find(p=>p[0]===freqMHz);
+    if(exact)loss=exact[1];
+    else{
+      const upper=cable.points.findIndex(p=>p[0]>freqMHz);
+      const [f1,l1]=cable.points[upper-1],[f2,l2]=cable.points[upper];
+      const t=Math.log(freqMHz/f1)/Math.log(f2/f1);
+      loss=Math.exp(Math.log(l1)+t*Math.log(l2/l1));
     }
   }
-  return points[0][1];
+  return {db100m:loss/FT_TO_M,warning:cable.publishedRange&&freqMHz<cable.publishedRange[0] ? 'Frequência abaixo de 30 MHz: extrapolação da fórmula do fabricante; confirme com medição.' : ''};
 }
-function gammaFromSWR(swr) { const s = Math.max(1, swr); return (s - 1) / (s + 1); }
-function swrFromGamma(gamma) { const g = Math.max(0, Math.min(0.999999, gamma)); return (1 + g) / (1 - g); }
-function dbToPowerRatio(db) { return Math.pow(10, -db / 10); }
-
-function getInputs() {
-  return {
-    powerConfiguredW: Math.max(0, parseBR(document.getElementById('powerW').value, 0)),
-    freqMHz: Math.max(0.001, parseBR(document.getElementById('freqMHz').value, 30)),
-    cableType: document.getElementById('cableType').value,
-    lengthM: Math.max(0, parseBR(document.getElementById('lengthM').value, 0)),
-    systemMode: document.getElementById('systemMode').value,
-    radioSWR: Math.max(1, parseBR(document.getElementById('radioSWR').value, 1)),
-    swrReference: document.getElementById('swrReference').value,
-    swrInput: Math.max(1, parseBR(document.getElementById('swrInput').value, 1))
-  };
+function gammaFromSWR(swr){return (swr-1)/(swr+1);}
+function swrFromGamma(g){return (1+g)/(1-g);}
+function lineMetrics(matchedLossDb,gammaLoad){
+  const a=Math.pow(10,-matchedLossDb/10),g2=gammaLoad*gammaLoad,loopFactor=g2*a*a;
+  const denominator=1-loopFactor;
+  const efficiency=a*(1-g2)/denominator;
+  const extraLossDb=10*Math.log10(denominator/(1-g2));
+  return {loopFactor,denominator,efficiency,extraLossDb,lineLossDb:matchedLossDb+extraLossDb};
 }
-
-function buildTripsMaxwell(p0, a, gammaLoad, maxTrips) {
-  const g2 = gammaLoad * gammaLoad;
-  const trips = [];
-  let outgoing = p0;
-  let totalForwardInputW = 0;
-  let totalIncidentAtLoadW = 0;
-  let totalAcceptedW = 0;
-  let totalReflectedAtLoadW = 0;
-  let totalReturnedToInputW = 0;
-  let totalForwardHeatW = 0;
-  let totalReturnHeatW = 0;
-  for (let i = 1; i <= maxTrips; i++) {
-    const arriveLoad = outgoing * a;
-    const heatForward = outgoing - arriveLoad;
-    const accepted = arriveLoad * (1 - g2);
-    const reflectedLoad = arriveLoad * g2;
-    const returnedInput = reflectedLoad * a;
-    const heatReturn = reflectedLoad - returnedInput;
-    trips.push({ i, outgoing, arriveLoad, heatForward, accepted, reflectedLoad, heatReturn, returnedInput });
-    totalForwardInputW += outgoing;
-    totalIncidentAtLoadW += arriveLoad;
-    totalAcceptedW += accepted;
-    totalReflectedAtLoadW += reflectedLoad;
-    totalReturnedToInputW += returnedInput;
-    totalForwardHeatW += heatForward;
-    totalReturnHeatW += heatReturn;
-    outgoing = returnedInput;
-    if (outgoing < Math.max(1e-9, p0 * 1e-9)) break;
+function buildTrips(p0,a,g2,count=8){
+  const rows=[];let outgoing=p0;
+  for(let i=1;i<=count;i++){
+    const arriveLoad=outgoing*a,accepted=arriveLoad*(1-g2),reflectedLoad=arriveLoad*g2,returnedInput=reflectedLoad*a;
+    rows.push({i,outgoing,arriveLoad,accepted,reflectedLoad,returnedInput,heatForward:outgoing-arriveLoad,heatReturn:reflectedLoad-returnedInput});
+    outgoing=returnedInput;
+    if(outgoing<=Math.max(1e-12,p0*1e-10))break;
   }
-  return { trips, totalForwardInputW, totalIncidentAtLoadW, totalAcceptedW, totalReflectedAtLoadW, totalReturnedToInputW, totalForwardHeatW, totalReturnHeatW };
+  return {rows,remainingW:outgoing};
 }
-
-function calculate() {
-  const input = getInputs();
-  const lossDb100m = interpolateLoss(input.cableType, input.freqMHz);
-  const matchedLossDb = lossDb100m * input.lengthM / 100;
-  const a = dbToPowerRatio(matchedLossDb);
-  let gammaLoad, gammaLineInput, swrLoad, swrLineInput, warning = '';
-
-  if (input.swrReference === 'load') {
-    swrLoad = input.swrInput;
-    gammaLoad = gammaFromSWR(swrLoad);
-    gammaLineInput = gammaLoad * a;
-    swrLineInput = swrFromGamma(gammaLineInput);
-  } else {
-    swrLineInput = input.swrInput;
-    gammaLineInput = gammaFromSWR(swrLineInput);
-    gammaLoad = a > 0 ? gammaLineInput / a : 0.999999;
-    if (gammaLoad >= 1) {
-      warning = 'O SWR informado na entrada da linha é alto demais para esta perda de cabo; a estimativa na antena foi limitada.';
-      gammaLoad = 0.999999;
-    }
-    swrLoad = swrFromGamma(gammaLoad);
+function calculate(input){
+  const powerConfiguredW=number(input.powerConfiguredW,'Potência (W)',0,1000000);
+  const freqMHz=number(input.freqMHz,'Frequência (MHz)',0.001,100000);
+  const lengthM=lengthToMeters(input.length,input.lengthUnit);
+  const swrInput=number(input.swrInput,'SWR',1,10000);
+  if(!['tuner','direct'].includes(input.systemMode))throw new RangeError('Modo do sistema inválido.');
+  if(!['load','line'].includes(input.swrReference))throw new RangeError('Referência do SWR inválida.');
+  const radioSWR=input.systemMode==='tuner'?number(input.radioSWR,'SWR residual',1,10000):1;
+  const customZ0=input.cableType==='Custom'?number(input.customZ0,'Impedância do cabo',1,1000):null;
+  const attenuation=cableLoss(input.cableType,freqMHz,input.customLoss,input.lossUnit);
+  const cable=input.cableType==='Custom'?{name:'Personalizado',z0:customZ0}:cableById(input.cableType);
+  const matchedLossDb=attenuation.db100m*lengthM/100;
+  const a=Math.pow(10,-matchedLossDb/10);
+  let gammaLoad,gammaLineInput;
+  if(input.swrReference==='load'){
+    gammaLoad=gammaFromSWR(swrInput);gammaLineInput=gammaLoad*a;
+  }else{
+    gammaLineInput=gammaFromSWR(swrInput);
+    if(a===0)throw new RangeError('A atenuação impede inferir o SWR da carga a partir da entrada; informe o SWR na carga.');
+    gammaLoad=gammaLineInput/a;
+    if(gammaLoad>=1)throw new RangeError(`SWR de entrada incompatível com uma carga passiva e essa atenuação. Deve ser menor que ${swrFromGamma(a).toFixed(3)}:1; confira o local de medição.`);
+    if(gammaLoad>gammaFromSWR(10000)+1e-14)throw new RangeError('O SWR inferido na carga excede 10000:1, limite numérico deste modelo. Confira a atenuação e a medição.');
   }
-
-  const g2 = gammaLoad * gammaLoad;
-  const gammaRadioResidual = gammaFromSWR(input.radioSWR);
-  const gammaInputForDirect = gammaLineInput;
-
-  let modeDescription, powerIntoSystemW, notTransferredRadioW, returnedToRadioW = 0, acceptedW, cableHeatW, totalLossDb, extraLossDb;
-  let matchedDeliveredW, firstArriveLoadW, firstAcceptedW, reflectedFirstW, firstReturnedW, recoveredByRereflectionW;
-  let tripsInfo, tripRows = [];
-
-  if (input.systemMode === 'tuner') {
-    const residualLossFraction = gammaRadioResidual * gammaRadioResidual;
-    notTransferredRadioW = input.powerConfiguredW * residualLossFraction;
-    powerIntoSystemW = input.powerConfiguredW - notTransferredRadioW;
-    modeDescription = 'Com tuner/rede de saída: a reflexão que retorna pela linha é re-refletida para a antena. O SWR residual visto pelo rádio é tratado separadamente apenas como uma estimativa de quanta potência o transmissor consegue transferir ao tuner/linha.';
-
-    const loopFactor = g2 * a * a;
-    const denominator = 1 - loopFactor;
-    if (denominator <= 0) {
-      acceptedW = 0;
-      cableHeatW = powerIntoSystemW;
-      warning = warning || 'O fator de recirculação ficou próximo de 1; verifique os dados de perda e SWR.';
-    } else {
-      acceptedW = powerIntoSystemW * a * (1 - g2) / denominator;
-      cableHeatW = powerIntoSystemW - acceptedW;
-    }
-
-    matchedDeliveredW = powerIntoSystemW * a;
-    firstArriveLoadW = matchedDeliveredW;
-    firstAcceptedW = firstArriveLoadW * (1 - g2);
-    reflectedFirstW = firstArriveLoadW * g2;
-    firstReturnedW = reflectedFirstW * a;
-    recoveredByRereflectionW = Math.max(0, acceptedW - firstAcceptedW);
-    returnedToRadioW = 0;
-    totalLossDb = powerIntoSystemW > 0 && acceptedW > 0 ? -10 * Math.log10(acceptedW / powerIntoSystemW) : Infinity;
-    extraLossDb = Math.max(0, totalLossDb - matchedLossDb);
-    tripsInfo = buildTripsMaxwell(powerIntoSystemW, a, gammaLoad, 8);
-    tripRows = tripsInfo.trips;
-  } else {
-    const mismatchFraction = gammaInputForDirect * gammaInputForDirect;
-    notTransferredRadioW = input.powerConfiguredW * mismatchFraction;
-    powerIntoSystemW = input.powerConfiguredW - notTransferredRadioW;
-    modeDescription = 'Sem tuner: estimativa simples. O rádio vê o SWR da entrada da linha; a potência transferida depende desse descasamento e a reflexão que volta não é reaproveitada por um tuner ideal neste modelo.';
-
-    firstArriveLoadW = powerIntoSystemW * a;
-    firstAcceptedW = firstArriveLoadW * (1 - g2);
-    reflectedFirstW = firstArriveLoadW * g2;
-    firstReturnedW = reflectedFirstW * a;
-    matchedDeliveredW = powerIntoSystemW * a;
-    acceptedW = firstAcceptedW;
-    cableHeatW = (powerIntoSystemW - firstArriveLoadW) + (reflectedFirstW - firstReturnedW);
-    returnedToRadioW = firstReturnedW;
-    recoveredByRereflectionW = 0;
-    totalLossDb = powerIntoSystemW > 0 && acceptedW > 0 ? -10 * Math.log10(acceptedW / powerIntoSystemW) : Infinity;
-    extraLossDb = Math.max(0, totalLossDb - matchedLossDb);
-    tripRows = [{ i: 1, outgoing: powerIntoSystemW, arriveLoad: firstArriveLoadW, heatForward: powerIntoSystemW - firstArriveLoadW, accepted: acceptedW, reflectedLoad: reflectedFirstW, heatReturn: reflectedFirstW - firstReturnedW, returnedInput: firstReturnedW }];
-    tripsInfo = { trips: tripRows, totalForwardInputW: powerIntoSystemW, totalIncidentAtLoadW: firstArriveLoadW, totalAcceptedW: acceptedW, totalReflectedAtLoadW: reflectedFirstW, totalReturnedToInputW: firstReturnedW, totalForwardHeatW: powerIntoSystemW - firstArriveLoadW, totalReturnHeatW: reflectedFirstW - firstReturnedW };
+  const g2=gammaLoad*gammaLoad;
+  // Net line input = forward power minus returning power. Never subtract mismatch twice.
+  const {loopFactor,denominator,efficiency,extraLossDb,lineLossDb}=lineMetrics(matchedLossDb,gammaLoad);
+  const residual=gammaFromSWR(radioSWR);
+  let netInputW,forwardInputW,sourceReturnW,acceptedW,cableHeatW,trips;
+  if(input.systemMode==='tuner'){
+    sourceReturnW=powerConfiguredW*residual*residual;
+    netInputW=powerConfiguredW-sourceReturnW;
+    forwardInputW=netInputW/denominator;
+    acceptedW=netInputW*efficiency;
+    cableHeatW=netInputW-acceptedW;
+    // Energy-packet illustration, not time-domain RF waves (phase is not modeled).
+    trips=buildTrips(netInputW,a,g2);
+  }else{
+    forwardInputW=powerConfiguredW;
+    sourceReturnW=forwardInputW*loopFactor;
+    netInputW=forwardInputW-sourceReturnW;
+    acceptedW=forwardInputW*a*(1-g2);
+    cableHeatW=forwardInputW*(1-a)*(1+a*g2);
+    trips=buildTrips(forwardInputW,a,g2,1);
   }
-
-  const wrongReflectionLostW = matchedDeliveredW * (1 - g2);
-  const cableName = input.cableType === 'Custom' ? 'Personalizado' : input.cableType;
-  return {
-    ...input,
-    cableName,
-    lossDb100m,
-    matchedLossDb,
-    a,
-    gammaLoad,
-    gammaLineInput,
-    swrLoad,
-    swrLineInput,
-    gammaRadioResidual,
-    modeDescription,
-    notTransferredRadioW,
-    powerIntoSystemW,
-    matchedDeliveredW,
-    firstArriveLoadW,
-    firstAcceptedW,
-    reflectedFirstW,
-    firstReturnedW,
-    acceptedW,
-    cableHeatW,
-    returnedToRadioW,
-    recoveredByRereflectionW,
-    totalLossDb,
-    extraLossDb,
-    wrongReflectionLostW,
-    reflectedPowerPctAtLoad: g2 * 100,
-    reflectedPowerPctAtLineInput: gammaLineInput * gammaLineInput * 100,
-    tripsInfo,
-    tripRows,
-    warning
-  };
+  const lineReturnedW=forwardInputW*loopFactor;
+  const mismatchFraction=input.systemMode==='tuner'?residual*residual:loopFactor;
+  const mismatchLossDb=Math.max(0,-10*Math.log10(1-mismatchFraction));
+  const overallLossDb=lineLossDb+mismatchLossDb;
+  const first=trips.rows[0];
+  return {...input,freqMHz,lengthM,radioSWR,cableName:cable.name,z0:cable.z0,lossDb100m:attenuation.db100m,
+    warning:attenuation.warning,matchedLossDb,a,gammaLoad,gammaLineInput,swrLoad:swrFromGamma(gammaLoad),swrLineInput:swrFromGamma(gammaLineInput),
+    powerConfiguredW,forwardInputW,netInputW,sourceReturnW,lineReturnedW,acceptedW,cableHeatW:Math.max(0,cableHeatW),
+    efficiency,lineLossDb,extraLossDb,mismatchLossDb,overallLossDb,loopFactor,
+    trips:trips.rows,remainingW:input.systemMode==='tuner'?trips.remainingW:0,
+    firstAcceptedW:first.accepted,firstArriveLoadW:first.arriveLoad,reflectedFirstW:first.reflectedLoad,firstReturnedW:first.returnedInput,
+    recoveredW:input.systemMode==='tuner'?Math.max(0,acceptedW-first.accepted):0,
+    balanceErrorW:powerConfiguredW-acceptedW-cableHeatW-sourceReturnW};
 }
+const api={FT_TO_M,parseNumber,lengthToMeters,lossToDb100m,cableById,cableLoss,gammaFromSWR,swrFromGamma,lineMetrics,buildTrips,calculate};
+if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SWRModel=Object.freeze(api);
+})(globalThis);
 
-function renderSimpleExplain(r) {
-  const modeText = r.systemMode === 'tuner'
-    ? 'A reflexão que volta ao tuner/rede de saída é re-refletida. Ela tenta chegar à antena de novo.'
-    : 'Sem tuner ideal, o rádio vê o SWR da entrada da linha. A energia que volta não é re-refletida por um tuner ideal neste modelo simples; o comportamento real depende do transmissor.';
-  const mismatchText = r.notTransferredRadioW > 1e-9
-    ? 'Pelo modelo simplificado de transferência, o SWR residual visto pelo rádio faz com que ' + fmtPower(r.notTransferredRadioW) + ' não sejam transferidos como potência útil ao tuner/linha. Isso não é potência refletida perdida nem calor no rádio.'
-    : 'O rádio/tuner está casado o suficiente: praticamente toda a potência configurada é transferida ao tuner/linha.';
-  const boxes = [
-    ['1. Potência configurada', 'O usuário ajustou o rádio para <span class="big-number">' + fmtPower(r.powerConfiguredW) + '</span>.'],
-    ['2. Potência transferida ao tuner/linha', mismatchText + '<br>Potência que segue para o tuner/linha: <span class="big-number">' + fmtPower(r.powerIntoSystemW) + '</span>.'],
-    ['3. Potência que a antena recebe', 'Com a perda do cabo e as reflexões, a antena recebe no final <span class="big-number">' + fmtPower(r.acceptedW) + '</span>.'],
-    ['4. Perda real do sistema', 'A perda real da linha neste modelo é calor no cabo: <span class="big-number">' + fmtPower(r.cableHeatW) + '</span>.<br>' + modeText]
+'use strict';
+const {cables}=SWRCables;
+const {parseNumber,cableById,cableLoss,lineMetrics,calculate,FT_TO_M}=SWRModel;
+const $=id=>document.getElementById(id);
+const fmt=(n,digits=2)=>Number.isFinite(n)?n.toLocaleString('pt-BR',{minimumFractionDigits:digits,maximumFractionDigits:digits}):'—';
+const watts=n=>`${fmt(n)} W`;
+const db=n=>`${fmt(n,3)} dB`;
+const inputText=n=>String(Number(n.toPrecision(12))).replace('.',',');
+let last=null,timers=[],previousLengthUnit='m',previousLossUnit='100m';
+function readInput(){
+  return {powerConfiguredW:parseNumber($('powerW').value),freqMHz:parseNumber($('freqMHz').value),
+    cableType:$('cableType').value,length:parseNumber($('lengthM').value),lengthUnit:$('lengthUnit').value,
+    customLoss:parseNumber($('lossDb100m').value),lossUnit:$('lossUnit').value,customZ0:parseNumber($('customZ0').value),
+    systemMode:$('systemMode').value,radioSWR:parseNumber($('radioSWR').value),swrReference:$('swrReference').value,swrInput:parseNumber($('swrInput').value)};
+}
+function syncControls(){
+  const custom=$('cableType').value==='Custom',tuner=$('systemMode').value==='tuner';
+  $('lossDb100m').readOnly=!custom;$('customZ0Box').hidden=!custom;$('radioSWRBox').hidden=!tuner;
+  $('modeNote').textContent=tuner
+    ? 'Tuner sem perdas: a potência líquida alimenta a linha descasada. O SWR residual, antes do tuner, é separado do SWR no cabo.'
+    : 'Fonte casada ao Z₀ do cabo: a potência configurada é a onda incidente. O retorno é absorvido na fonte; não há segunda subtração do descasamento.';
+  if(!custom){
+    const result=cableLoss($('cableType').value,parseNumber($('freqMHz').value));
+    $('lossDb100m').value=(result.db100m*($('lossUnit').value==='100ft'?FT_TO_M:1)).toFixed(6).replace('.',',');
+  }
+}
+function renderCable(r){
+  const custom=r.cableType==='Custom';
+  $('cableMeta').textContent=custom
+    ? `Cabo personalizado · Z₀ ${fmt(r.z0,0)} Ω. O valor manual não muda automaticamente com a frequência.`
+    : `${r.cableName} · Z₀ ${r.z0} Ω · dados conferidos em ${cableById(r.cableType).verified}.`;
+  const warning=[r.warning,r.z0!==50?`Atenção: cabo de ${r.z0} Ω. O SWR deve ser referido a ${r.z0} Ω; uma leitura em medidor de 50 Ω não é convertida automaticamente.`:''].filter(Boolean).join(' ');
+  $('cableWarning').textContent=warning;$('cableWarning').hidden=!warning;
+  if(custom){$('sourceInfo').textContent='Dado fornecido pelo usuário na frequência atual. Confirme a unidade e a ficha do seu cabo.';$('sourceTable').innerHTML='';return;}
+  const c=cableById(r.cableType);
+  $('sourceInfo').innerHTML=`${c.method}<br>${c.kind==='coefficients'?`k1 = ${c.k1}; k2 = ${c.k2}; resultado em dB/100 ft.<br>`:''}Faixa aceita: ${c.range[0]}–${c.range[1]} MHz.<br><a href="${c.source}" target="_blank" rel="noopener">Ficha técnica — ${c.manufacturer} ${c.id}</a><br>100 ft = 30,48 m. Os pontos publicados podem ter arredondamento diferente da fórmula.`;
+  $('sourceTable').innerHTML=c.points.map(([f,l])=>`<tr><td>${fmt(f,2)}</td><td>${fmt(l,3)}</td><td>${fmt(l/FT_TO_M,3)}</td></tr>`).join('');
+}
+function renderComparison(r){
+  $('comparisonTable').innerHTML=cables.map(c=>{
+    try{
+      const attenuation=cableLoss(c.id,r.freqMHz);
+      const matchedLossDb=attenuation.db100m*r.lengthM/100;
+      const comparison={...lineMetrics(matchedLossDb,r.gammaLoad),matchedLossDb,lossDb100m:attenuation.db100m,warning:attenuation.warning};
+      return `<tr><td>${c.name} / ${c.z0} Ω${comparison.warning?' *':''}</td><td>${fmt(comparison.lossDb100m,3)}</td><td>${db(comparison.matchedLossDb)}</td><td>${db(comparison.lineLossDb)}</td><td>${fmt(comparison.efficiency*100,1)}%</td></tr>`;
+    }catch(error){return `<tr><td>${c.name}</td><td colspan="4">Fora da faixa ${c.range[0]}–${c.range[1]} MHz</td></tr>`;}
+  }).join('')+'<tr><td colspan="5">* Fórmula LMR extrapolada abaixo de 30 MHz. Valores nominais; não incluem conectores nem envelhecimento.</td></tr>';
+}
+function renderResults(r){
+  $('cardAntenna').textContent=watts(r.acceptedW);$('cardCableHeat').textContent=watts(r.cableHeatW);
+  $('cardReturned').textContent=watts(r.sourceReturnW);$('cardLineLoss').textContent=db(r.lineLossDb);
+  $('balanceCaption').textContent=`Fonte: ${watts(r.powerConfiguredW)} incidentes disponíveis. Entrada líquida na linha: ${watts(r.netInputW)}. SWR na carga: ${fmt(r.swrLoad)}:1.`;
+  const percentages=[r.acceptedW,r.cableHeatW,r.sourceReturnW].map(w=>r.powerConfiguredW?w/r.powerConfiguredW*100:0);
+  ['energyLoad','energyHeat','energyReturn'].forEach((id,i)=>{$(id).style.width=`${percentages[i]}%`;});
+  $('energyLegend').textContent=`Carga ${fmt(percentages[0],1)}% · calor no cabo ${fmt(percentages[1],1)}% · retorno à fonte ${fmt(percentages[2],1)}%. ${watts(r.acceptedW+r.cableHeatW+r.sourceReturnW)} contabilizados.`;
+  $('simpleExplain').innerHTML=[
+    ['Atenuação casada',`${db(r.matchedLossDb)} no comprimento informado (${fmt(r.lossDb100m,3)} dB/100 m). É a referência com SWR 1:1.`],
+    ['Perda adicional na linha',`${db(r.extraLossDb)} além da perda casada. Mede dissipação adicional, não toda a potência refletida.`],
+    ['Descasamento visto pela fonte',`${db(r.mismatchLossDb)} de redução na potência líquida. O retorno de ${watts(r.sourceReturnW)} não é calor no cabo.`],
+    ['Da fonte até a carga',`${db(r.overallLossDb)} de redução total. ${r.systemMode==='tuner'?'Tuner ideal, com o SWR residual informado.':'Fonte ideal casada, sem foldback.'}`]
+  ].map(([title,body])=>`<div class="step-box"><div class="step-title">${title}</div>${body}</div>`).join('');
+  const rows=[['Cabo / referência',`${r.cableName} / ${r.z0} Ω`],['Frequência / comprimento',`${fmt(r.freqMHz,3)} MHz / ${fmt(r.lengthM,3)} m`],
+    ['Perda casada no comprimento informado',db(r.matchedLossDb)],['SWR na carga',`${fmt(r.swrLoad,3)}:1`],['SWR na entrada da linha',`${fmt(r.swrLineInput,3)}:1`],
+    ['Potência incidente disponível na fonte',watts(r.powerConfiguredW)],['Potência direta na entrada da linha (P+)',watts(r.forwardInputW)],
+    ['Potência reversa na entrada da linha (P−)',watts(r.lineReturnedW)],['Entrada líquida na linha (P+ − P−)',watts(r.netInputW)],
+    ['Entregue à carga',watts(r.acceptedW)],['Dissipada no cabo',watts(r.cableHeatW)],['Retorno à fonte (antes do tuner, quando presente)',watts(r.sourceReturnW)],
+    ['Perda dissipativa da linha (entrada líquida → carga)',db(r.lineLossDb)],['Parcela adicional de perda da linha por SWR',db(r.extraLossDb)],
+    ['Redução fonte → carga (inclui descasamento da fonte)',db(r.overallLossDb)],['Eficiência da linha (carga / entrada líquida)',`${fmt(r.efficiency*100,2)}%`]];
+  $('mainResultsTable').innerHTML=rows.map(([label,value])=>`<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('');
+  $('tripTable').innerHTML=r.trips.map(t=>`<tr><td>${t.i}</td><td>${watts(t.outgoing)}</td><td>${watts(t.arriveLoad)}</td><td>${watts(t.accepted)}</td><td>${watts(t.reflectedLoad)}</td><td>${watts(t.returnedInput)}</td></tr>`).join('');
+  $('advancedNote').textContent=r.systemMode==='tuner'
+    ? `Decomposição didática em até 8 parcelas. Os resultados principais usam a soma infinita analítica, não o truncamento desta tabela. Restam ${watts(r.remainingW)} a repartir após as parcelas exibidas. Não representa transientes de RF nem inclui fase.`
+    : 'Uma ida e uma volta: a fonte casada absorve o retorno. Não se aplica outra redução por SWR à potência incidente.';
+  $('radioPowerLabel').textContent=watts(r.powerConfiguredW);$('antennaSWRLabel').textContent=`SWR ${fmt(r.swrLoad)}:1`;
+  $('powerLabel').textContent=`${watts(r.acceptedW)} na carga`;$('wave').textContent='→';
+  $('timeline').textContent='Cálculo atualizado. Animar mostra as parcelas de energia; o balanço acima é o resultado em regime permanente.';
+  renderCable(r);renderComparison(r);
+}
+function stopAnimation(){timers.forEach(clearTimeout);timers=[];}
+function calculateAndRender(){
+  stopAnimation();
+  try{
+    syncControls();const result=calculate(readInput());
+    last=result;$('errorMessage').hidden=true;$('results').hidden=false;renderResults(result);return result;
+  }catch(error){last=null;$('errorMessage').textContent=error.message;$('errorMessage').hidden=false;$('results').hidden=true;return null;}
+}
+function runAnimation(){
+  const r=calculateAndRender();if(!r)return;
+  const first=r.trips[0];
+  const steps=[
+    ['→',`Entrada: ${watts(first.outgoing)}.`,r.systemMode==='tuner'?'Parcela inicial líquida após o tuner. As demais parcelas são contabilizadas pela série geométrica.':'Onda incidente da fonte casada; o descasamento ainda não foi subtraído.'],
+    ['→',`Ida: ${watts(first.heatForward)} de calor.`,`${watts(first.arriveLoad)} chegam à carga na primeira parcela.`],
+    ['←',`Carga aceita ${watts(first.accepted)}.`,`${watts(first.reflectedLoad)} são refletidos; refletir não significa dissipar no cabo.`],
+    ['←',`Volta: ${watts(first.heatReturn)} de calor.`,`${watts(first.returnedInput)} retornam à entrada da linha.`],
+    [r.systemMode==='tuner'?'→':'←',r.systemMode==='tuner'?'As parcelas retornadas continuam no modelo ideal.':'A fonte casada absorve o retorno.',r.systemMode==='tuner'?`A soma analítica entrega ${watts(r.acceptedW)} à carga; o restante vira calor na linha.`:`${watts(r.sourceReturnW)} voltam à fonte, sem serem contados novamente como perda do cabo.`],
+    ['→','Balanço final',`${watts(r.acceptedW)} na carga + ${watts(r.cableHeatW)} no cabo + ${watts(r.sourceReturnW)} na fonte = ${watts(r.powerConfiguredW)}.`]
   ];
-  document.getElementById('simpleExplain').innerHTML = boxes.map(b => '<div class="step-box"><div class="step-title">' + b[0] + '</div>' + b[1] + '</div>').join('');
+  steps.forEach(([arrow,title,body],i)=>timers.push(setTimeout(()=>{$('wave').textContent=arrow;$('powerLabel').textContent=title;$('timeline').textContent=`${i+1}/${steps.length} — ${title}\n${body}`;},i*1300)));
 }
-
-function renderResults(r) {
-  document.getElementById('cardConfigured').textContent = fmtPower(r.powerConfiguredW);
-  document.getElementById('cardSystemIn').textContent = fmtPower(r.powerIntoSystemW);
-  document.getElementById('cardSystemInCaption').textContent = r.systemMode === 'tuner' ? 'ao tuner/linha' : 'estimativa sem tuner';
-  document.getElementById('cardAntenna').textContent = fmtPower(r.acceptedW);
-  document.getElementById('cardCableHeat').textContent = fmtPower(r.cableHeatW);
-
-  document.getElementById('radioPowerLabel').textContent = fmtPower(r.powerConfiguredW, 1, 2) + ' config.';
-  document.getElementById('antennaSWRLabel').textContent = 'SWR ' + fmt(r.swrLoad, 2) + ':1';
-  document.getElementById('topLabel').textContent = 'Perda normal do cabo: ' + fmt(r.matchedLossDb, 2) + ' dB. Perda extra por SWR: ' + fmt(r.extraLossDb, 2) + ' dB.';
-  document.getElementById('powerLabel').textContent = 'Resultado: ' + fmtPower(r.acceptedW) + ' na antena; ' + fmtPower(r.cableHeatW) + ' em calor no cabo.';
-  document.getElementById('timeline').textContent = 'Cálculo concluído. Clique em Animar para ver a explicação passo a passo.';
-
-  renderSimpleExplain(r);
-
-  const rows = [
-    ['Modo escolhido', r.systemMode === 'tuner' ? 'Com tuner/transmatch na entrada da linha' : 'Sem tuner: rádio direto no cabo'],
-    ['Resumo do modo', r.modeDescription],
-    ['Cabo selecionado', r.cableName + ', ' + fmt(r.lengthM, 1) + ' m'],
-    ['Perda normal do cabo', fmt(r.matchedLossDb, 2) + ' dB'],
-    ['SWR na entrada da linha', fmt(r.swrLineInput, 2) + ':1'],
-    ['SWR real estimado na antena/carga', fmt(r.swrLoad, 2) + ':1'],
-    ['Potência refletida na antena', fmt(r.reflectedPowerPctAtLoad, 1) + '% da potência incidente'],
-    ['Potência configurada no rádio', fmtPower(r.powerConfiguredW)],
-    ['Potência transferida ao tuner/linha', fmtPower(r.powerIntoSystemW)],
-    ['Potência não transferida como potência útil ao tuner/linha', fmtPower(r.notTransferredRadioW)],
-    ['Se a linha estivesse casada', fmtPower(r.matchedDeliveredW) + ' chegariam ao fim do cabo'],
-    ['Entregue à antena', fmtPower(r.acceptedW)],
-    ['Calor no cabo', fmtPower(r.cableHeatW)],
-    ['Perda total real desde a entrada do sistema', fmt(r.totalLossDb, 2) + ' dB'],
-    ['Perda extra causada pelo SWR', fmt(r.extraLossDb, 2) + ' dB'],
-    ['Só a primeira chegada, sem re-reflexões', fmtPower(r.firstAcceptedW)],
-    ['Potência recuperada por re-reflexões', fmtPower(r.recoveredByRereflectionW)]
-  ];
-  if (r.systemMode === 'direct') rows.push(['Potência que retorna ao rádio/proteção', fmtPower(r.returnedToRadioW)]);
-  if (r.warning) rows.push(['Aviso', '<span class="warn">' + r.warning + '</span>']);
-
-  document.getElementById('mainResultsTable').innerHTML = rows.map(row => '<tr><th>' + row[0] + '</th><td class="value">' + row[1] + '</td></tr>').join('');
-
-  const header = '<tr><th>Viagem</th><th>Ida na linha</th><th>Chega à antena</th><th>Aceita</th><th>Reflete</th><th>Volta ao início</th></tr>';
-  const body = r.tripRows.map(t => '<tr><td>' + t.i + '</td><td>' + fmtPower(t.outgoing) + '</td><td>' + fmtPower(t.arriveLoad) + '</td><td>' + fmtPower(t.accepted) + '</td><td>' + fmtPower(t.reflectedLoad) + '</td><td>' + fmtPower(t.returnedInput) + '</td></tr>').join('');
-  document.getElementById('tripTable').innerHTML = header + body;
-  document.getElementById('advancedNote').textContent = r.systemMode === 'tuner'
-    ? 'Cada linha mostra uma parcela menor da energia retornando ao início da linha e sendo re-refletida. A soma dessas parcelas explica por que a potência refletida não deve ser simplesmente subtraída como perda.'
-    : 'No modo sem tuner, a tabela mostra só a primeira ida e a primeira volta, porque não estamos assumindo re-reflexão ideal na entrada da linha.';
-
-  document.getElementById('formulaBar').innerHTML = 'Modelo didático Maxwell: Γ = (SWR − 1) / (SWR + 1) &nbsp; | &nbsp; Perda normal = perda do cabo casado &nbsp; | &nbsp; Com tuner ideal, a reflexão é re-refletida; a perda real vem da atenuação do cabo nas múltiplas viagens, não de subtrair a potência refletida.';
+function resetDefaults(){
+  const defaults={powerW:'100',freqMHz:'30',cableType:'8240',lengthM:'10',lengthUnit:'m',lossUnit:'100m',customZ0:'50',systemMode:'tuner',radioSWR:'1',swrReference:'load',swrInput:'2'};
+  for(const [id,value]of Object.entries(defaults))$(id).value=value;
+  previousLengthUnit='m';previousLossUnit='100m';calculateAndRender();
 }
-
-function calculateAndRender() {
-  stopAnimation();
-  updateCableLossField(false);
-  updateModeUI();
-  last = calculate();
-  renderResults(last);
-}
-function stopAnimation() {
-  animationTimers.forEach(clearTimeout);
-  animationTimers = [];
-  document.getElementById('forwardWave').style.display = 'none';
-  document.getElementById('reflectedWave').style.display = 'none';
-}
-function schedule(delay, action) { animationTimers.push(setTimeout(action, delay)); }
-
-function runAnimation() {
-  if (!last) calculateAndRender();
-  const r = last;
-  stopAnimation();
-  const f = document.getElementById('forwardWave');
-  const b = document.getElementById('reflectedWave');
-  const label = document.getElementById('powerLabel');
-  const timeline = document.getElementById('timeline');
-  const stage = document.getElementById('stage');
-  const left = 128;
-  const right = Math.max(left + 40, stage.clientWidth - 164);
-  const middle = (left + right) / 2;
-
-  schedule(0, function() {
-    f.style.display = 'block'; b.style.display = 'none'; f.style.left = left + 'px';
-    label.textContent = '1) O rádio está configurado para ' + fmtPower(r.powerConfiguredW) + '.';
-    timeline.textContent = '1) Potência configurada\nO rádio está configurado para ' + fmtPower(r.powerConfiguredW) + '.';
-  });
-  schedule(1400, function() {
-    f.style.left = Math.round(left + (middle - left) * 0.45) + 'px';
-    label.textContent = '2) Entram no sistema ' + fmtPower(r.powerIntoSystemW) + '.';
-    timeline.textContent += '\n\n2) Entrada do sistema\n' + (r.notTransferredRadioW > 1e-9 ? fmtPower(r.notTransferredRadioW) + ' não entram no sistema por descasamento visto pelo rádio. ' : '') + 'Seguem para a linha/tuner: ' + fmtPower(r.powerIntoSystemW) + '.';
-  });
-  schedule(2800, function() {
-    f.style.left = middle + 'px';
-    const heatForward = r.tripRows[0] ? r.tripRows[0].heatForward : 0;
-    label.textContent = '3) Na primeira ida, ' + fmtPower(heatForward) + ' viram calor no cabo.';
-    timeline.textContent += '\n\n3) Cabo na ida\nA primeira ida sofre a perda normal do cabo: ' + fmt(r.matchedLossDb, 2) + ' dB. Calor nessa ida: ' + fmtPower(heatForward) + '.';
-  });
-  schedule(4200, function() {
-    f.style.left = right + 'px';
-    label.textContent = '4) A antena aceita parte e reflete parte.';
-    timeline.textContent += '\n\n4) Antena\nChegam na primeira ida ' + fmtPower(r.firstArriveLoadW) + '. A antena aceita ' + fmtPower(r.firstAcceptedW) + ' e reflete ' + fmtPower(r.reflectedFirstW) + '.';
-  });
-  schedule(5600, function() {
-    f.style.display = 'none'; b.style.display = 'block'; b.style.left = right + 'px';
-    label.textContent = '5) A reflexão volta pelo cabo; ela também sofre perda.';
-    const heatReturn = r.tripRows[0] ? r.tripRows[0].heatReturn : 0;
-    timeline.textContent += '\n\n5) Volta\nNa volta, ' + fmtPower(heatReturn) + ' viram calor e ' + fmtPower(r.firstReturnedW) + ' chegam ao início da linha.';
-  });
-  schedule(7000, function() {
-    b.style.left = middle + 'px';
-    if (r.systemMode === 'tuner') {
-      label.textContent = '6) O tuner re-reflete essa energia; ela tenta chegar à antena de novo.';
-      timeline.textContent += '\n\n6) Re-reflexão\nNo modo Maxwell/tuner, essa energia não é tratada como perdida no rádio. Ela é re-refletida para a linha.';
-    } else {
-      label.textContent = '6) Sem tuner, a energia que retorna não é reaproveitada neste modelo.';
-      timeline.textContent += '\n\n6) Sem tuner\nA energia que retorna ao rádio/proteção é ' + fmtPower(r.returnedToRadioW) + '. O comportamento real depende do transmissor.';
-    }
-  });
-  schedule(8400, function() {
-    b.style.left = left + 'px';
-    label.textContent = 'Resumo: ' + fmtPower(r.acceptedW) + ' na antena; ' + fmtPower(r.cableHeatW) + ' em calor no cabo.';
-    timeline.textContent += '\n\nResumo\nEntregue à antena: ' + fmtPower(r.acceptedW) + '.\nCalor no cabo: ' + fmtPower(r.cableHeatW) + '.\nPerda extra por SWR: ' + fmt(r.extraLossDb, 2) + ' dB.';
-  });
-}
-
-function updateCableLossField(force) {
-  const type = document.getElementById('cableType').value;
-  const freq = Math.max(0.001, parseBR(document.getElementById('freqMHz').value, 30));
-  if (type !== 'Custom' || force) setInputValue('lossDb100m', interpolateLoss(type, freq), 2);
-}
-function updateModeUI() {
-  const mode = document.getElementById('systemMode').value;
-  const radioBox = document.getElementById('radioSWRBox');
-  const modeNote = document.getElementById('modeNote');
-  if (mode === 'tuner') {
-    radioBox.classList.remove('hidden');
-    modeNote.textContent = 'Modelo Maxwell: o tuner/rede de saída na entrada da linha re-reflete a potência que volta. A potência refletida não é considerada perdida no rádio; a perda principal é a atenuação do cabo.';
-  } else {
-    radioBox.classList.add('hidden');
-    modeNote.textContent = 'Estimativa sem tuner: o rádio vê o SWR da entrada da linha. Neste modo o campo de SWR residual do tuner é ocultado, porque não existe tuner separando o rádio do cabo.';
-  }
-}
-function resetDefaults() {
-  stopAnimation();
-  document.getElementById('powerW').value = '100,0';
-  document.getElementById('freqMHz').value = '30,0';
-  document.getElementById('cableType').value = 'RG-58';
-  document.getElementById('lengthM').value = '10,0';
-  document.getElementById('systemMode').value = 'tuner';
-  document.getElementById('radioSWR').value = '1,0';
-  document.getElementById('swrReference').value = 'line';
-  document.getElementById('swrInput').value = '2,0';
-  updateCableLossField(true);
-  updateModeUI();
-  last = calculate();
-  renderResults(last);
-}
-
-document.getElementById('cableType').addEventListener('change', function() { updateCableLossField(true); calculateAndRender(); });
-document.getElementById('freqMHz').addEventListener('change', function() { updateCableLossField(true); calculateAndRender(); });
-document.getElementById('systemMode').addEventListener('change', calculateAndRender);
-document.getElementById('swrReference').addEventListener('change', calculateAndRender);
-['powerW', 'lengthM', 'lossDb100m', 'radioSWR', 'swrInput'].forEach(function(id) { document.getElementById(id).addEventListener('change', calculateAndRender); });
-['powerW', 'freqMHz', 'lengthM', 'lossDb100m', 'radioSWR', 'swrInput'].forEach(function(id) {
-  document.getElementById(id).addEventListener('blur', function() {
-    const digits = id === 'lossDb100m' ? 2 : 1;
-    const min = (id === 'swrInput' || id === 'radioSWR') ? 1 : 0;
-    const value = Math.max(min, parseBR(document.getElementById(id).value, min));
-    document.getElementById(id).value = fmt(value, digits);
-  });
+$('cableType').innerHTML=cables.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')+'<option value="Custom">Personalizado / dado medido</option>';
+$('calculateButton').addEventListener('click',calculateAndRender);$('animateButton').addEventListener('click',runAnimation);$('resetButton').addEventListener('click',resetDefaults);
+['powerW','freqMHz','cableType','lengthM','lossDb100m','customZ0','systemMode','radioSWR','swrReference','swrInput'].forEach(id=>$(id).addEventListener('change',calculateAndRender));
+$('lengthUnit').addEventListener('change',()=>{
+  const n=parseNumber($('lengthM').value),next=$('lengthUnit').value;
+  if(Number.isFinite(n))$('lengthM').value=inputText(n*(previousLengthUnit==='ft'?FT_TO_M:1)/(next==='ft'?FT_TO_M:1));
+  previousLengthUnit=next;calculateAndRender();
 });
-
-updateCableLossField(true);
-updateModeUI();
-calculateAndRender();
+$('lossUnit').addEventListener('change',()=>{
+  const n=parseNumber($('lossDb100m').value),next=$('lossUnit').value;
+  if($('cableType').value==='Custom'&&Number.isFinite(n))$('lossDb100m').value=inputText(n/(previousLossUnit==='100ft'?FT_TO_M:1)*(next==='100ft'?FT_TO_M:1));
+  previousLossUnit=next;calculateAndRender();
+});
+document.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.tagName==='INPUT')calculateAndRender();});
+resetDefaults();
 </script>
 </body>
 </html>
