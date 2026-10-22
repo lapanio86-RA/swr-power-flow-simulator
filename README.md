@@ -1,166 +1,90 @@
 # SWR Power Flow Simulator
 
-Simulador didático em HTML para visualizar o fluxo de potência em sistemas de rádio com cabo coaxial, antena descasada, SWR, perda de linha e múltiplas reflexões.
+Calculadora offline de perda em coaxial, SWR e balanço de potência, com interface clássica, catálogo rastreável e animação didática.
 
-O projeto foi criado para ajudar radioamadores a entenderem uma ideia central: **potência refletida não é automaticamente potência perdida**.
-
-O modelo é inspirado nos conceitos apresentados por M. Walter Maxwell, W2DU, em *Reflections III: Transmission Lines and Antennas*.
-
-## Objetivo
-
-Muitos radioamadores aprendem que, se uma antena reflete parte da potência, essa potência foi “perdida” ou “voltou para queimar o rádio”. Essa interpretação é incompleta.
-
-Em um sistema com tuner/transmatch ou rede de saída adequada, a potência refletida pela antena volta pela linha de transmissão, chega à entrada da linha e pode ser re-refletida novamente em direção à antena.
-
-A perda real aparece principalmente como:
-
-1. perda normal do cabo;
-2. perda adicional causada pelas viagens extras da energia na linha.
-
-Ou seja:
-
-```text
-potência refletida ≠ potência automaticamente perdida
-```
-
-## O que o simulador mostra
-
-O simulador calcula e apresenta:
-
-- potência configurada no rádio;
-- potência efetivamente transferida para o sistema;
-- potência entregue à antena;
-- potência dissipada como calor no cabo;
-- perda normal do cabo em linha casada;
-- perda adicional causada pelo SWR;
-- SWR na entrada da linha;
-- SWR estimado na antena;
-- diferença entre a primeira chegada da potência e o resultado após múltiplas reflexões;
-- efeito de um tuner/transmatch na entrada da linha.
-
-## Modos de operação
-
-### 1. Com tuner/transmatch na entrada da linha
-
-Este é o modo principal do simulador.
-
-```text
-Rádio → tuner/transmatch → cabo → antena
-```
-
-Neste modo, o tuner ou rede de saída faz o casamento para o rádio, mas a linha entre o tuner e a antena ainda pode operar com SWR alto.
-
-A potência refletida pela antena retorna pela linha. Ao chegar ao tuner/rede de saída, ela não é tratada como potência perdida no rádio. Ela é re-refletida para a linha e tenta chegar à antena novamente.
-
-Neste modo, a perda real fica concentrada principalmente na atenuação do cabo.
-
-### 2. Sem tuner, rádio direto no cabo
-
-```text
-Rádio → cabo → antena
-```
-
-Neste modo, o rádio vê diretamente o descasamento apresentado pela linha e pela antena.
-
-O simulador separa a potência configurada no rádio da potência efetivamente transferida para o sistema, porque um rádio real pode não conseguir entregar toda a potência ajustada quando enxerga um descasamento significativo.
-
-## Sobre os dois SWRs
-
-O simulador separa dois conceitos diferentes.
-
-### SWR visto pelo rádio
-
-É o SWR que o transceptor enxerga do seu lado do tuner.
-
-Com um tuner bem ajustado, esse valor pode ser próximo de:
-
-```text
-1,0:1
-```
-
-Mesmo que o cabo e a antena estejam com SWR maior.
-
-### SWR da linha / antena
-
-É o SWR existente depois do tuner, no cabo que alimenta a antena.
-
-É possível ter, ao mesmo tempo:
-
-```text
-SWR visto pelo rádio: 1,0:1
-SWR na linha/antena: 4,0:1
-```
-
-Isso significa que o rádio está casado, mas a linha continua trabalhando com ondas estacionárias.
-
-## Exemplo conceitual
-
-Imagine um rádio configurado para 100 W.
-
-Com uma linha casada, parte da potência já seria perdida no cabo por atenuação normal.
-
-Com SWR na antena, parte da potência incidente é refletida. Essa potência volta pelo cabo, sofre atenuação, chega ao tuner/rede de saída e é re-refletida.
-
-Depois de várias idas e voltas, a potência efetivamente termina em dois lugares principais:
-
-```text
-antena + calor no cabo
-```
-
-A diferença entre uma linha casada e uma linha com SWR é a perda extra causada pelas viagens adicionais.
-
-## O que este simulador não modela
-
-Este é um simulador didático. Ele não substitui medições reais nem softwares completos de RF.
-
-A versão atual não modela em detalhe:
-
-- impedância complexa completa;
-- fase elétrica da linha;
-- Smith Chart;
-- baluns;
-- conectores;
-- corrente de modo comum;
-- perdas reais do tuner;
-- comportamento específico de foldback de cada rádio;
-- aquecimento interno do transmissor;
-- eficiência real de radiação da antena;
-- diagrama de radiação;
-- ERP ou EIRP.
-
-O foco é o entendimento do fluxo de potência e da diferença entre potência refletida e potência realmente perdida.
+Abra **simulador.html** ou **index.html** no navegador. São cópias idênticas e autônomas, sem dependências, servidor ou conexão obrigatória. index.html também permite servir o simulador na raiz do GitHub Pages; a publicação precisa ser configurada no repositório.
 
 ## Como usar
 
-Baixe ou clone o repositório e abra o arquivo HTML no navegador.
+1. Informe a potência incidente disponível da fonte ideal e a frequência em MHz.
+2. Selecione o fabricante/modelo e o comprimento, em metros ou pés.
+3. Abra **Tabela / fórmula e origem dos dados** para conferir a ficha e os pontos publicados. Nos presets, a atenuação é somente leitura; use **Personalizado** para uma medição na frequência atual.
+4. Escolha tuner ideal ou ligação direta com fonte casada que absorve o retorno.
+5. Informe o SWR na carga ou na entrada do cabo. O SWR residual antes do tuner é independente do SWR da linha.
+6. Use **Calcular** ou **Animar**. Campos inválidos ocultam o resultado anterior e interrompem a animação.
 
-Não é necessário instalar nada.
+Aceita vírgula ou ponto decimal. Alternar unidades conserva o comprimento físico e a atenuação manual. O cálculo dos presets não usa o arredondamento do campo exibido.
+
+## Catálogo
+
+Dados conferidos em 22/10/2026. Os presets representam produtos específicos, não qualquer cabo com o mesmo nome RG.
+
+| Modelo | Z₀ | Método | A 30 MHz (dB/100 m) |
+|---|---:|---|---:|
+| RG-58 / Belden 8240 | 50 Ω | tabela nominal | 6,321 |
+| RG-8X / Belden 9258 | 50 Ω | tabela nominal | 5,265 |
+| RG-213 / Belden 8267 | 50 Ω | tabela nominal | 3,246 |
+| RG-6 / Belden 1694A | 75 Ω | tabela nominal | 3,830 |
+| Times Microwave LMR-240 | 50 Ω | coeficientes publicados | 4,383 |
+| Times Microwave LMR-400 | 50 Ω | coeficientes publicados | 2,223 |
+| Times Microwave LMR-400-UF | 50 Ω | coeficientes publicados | 2,668 |
+| Times Microwave LMR-600 | 50 Ω | coeficientes publicados | 1,383 |
+
+Cada registro em src/cables.js contém URL, unidade original, data, faixa e método. Fontes e divergências históricas estão em [docs/validation.md](docs/validation.md).
+
+- **Belden:** interpolação log-log entre pontos nominais. Fora da tabela, solicita dado manual; não congela o valor na extremidade.
+- **LMR:** k1 × √f + k2 × f, com f em MHz e resultado em **dB/100 ft**. Divide-se por 0,3048 para dB/100 m. Abaixo do primeiro ponto tabulado (30 MHz), o uso é identificado como extrapolação da fórmula. O limite inferior adotado é 1 MHz; não se afirma precisão certificada nessa extrapolação.
+- **Personalizado:** atenuação fornecida para a frequência atual; não há curva implícita.
+- **75 Ω:** o SWR deve ser referido ao Z₀ do cabo. Uma leitura em medidor de 50 Ω não é convertida automaticamente. A comparação pressupõe o mesmo SWR relativo a cada Z₀, não uma troca física que preserve o casamento da instalação.
+
+Valores nominais/típicos não são orçamento de potência, garantia térmica nem perda medida de cabo envelhecido. Conectores, temperatura e outros componentes não estão incluídos.
+
+## Referências de potência
+
+a = 10^(−L/10) é a transmissão de **potência** de uma ida; L é a perda casada em dB. g = (SWRcarga−1)/(SWRcarga+1) é o módulo do coeficiente de reflexão de **tensão**; a fração refletida de potência é g².
 
 ```text
-simulador.html
+Γentrada = a × g
+η = a(1−g²) / (1−a²g²)
+Perda real da linha = −10 log10(η)
+Perda adicional da linha por SWR = −10 log10(η) − L
+Entrada líquida = P+ − P− = potência na carga + calor no cabo
 ```
 
-Depois configure:
+**Direto, fonte ideal casada ao Z₀:** a potência configurada é a onda incidente P+. A carga aceita P+ × a × (1−g²), o retorno à fonte é P+ × a² × g² e o cabo dissipa P+ × (1−a) × (1+a×g²). Não se desconta o descasamento novamente antes de calcular a carga. Cabo ideal, 100 W incidentes e SWR 3:1 dão **75 W na carga, 25 W na fonte e 0 W no cabo**, não 56,25 W na carga.
 
-1. potência configurada no rádio;
-2. frequência de operação;
-3. tipo de cabo;
-4. comprimento do cabo;
-5. perda do cabo;
-6. modo do sistema;
-7. SWR visto pelo rádio, se aplicável;
-8. SWR da linha ou da antena.
+**Tuner ideal:** pressupõe casamento possível e tuner sem perdas. A entrada líquida na linha é a potência disponível menos o retorno por SWR residual antes do tuner. A carga recebe entrada líquida × η. P+ e P− podem exceder a potência líquida sem violar a conservação de energia.
 
-Clique em **Calcular** para ver os resultados.
+As até oito viagens da tabela/animação são uma decomposição de energia em série geométrica. O resultado usa a soma analítica infinita, e a tabela informa o restante. Não é uma simulação temporal de ondas coerentes. Fase, impedância complexa, foldback, redes reais de casamento, limites térmicos e eficiência de radiação não são modelados.
 
-Clique em **Animar** para acompanhar a explicação passo a passo.
+## Referências
 
-## Referência conceitual
+- [Powertec — Coaxial Cable Loss Calculator](https://portal.powertec.com.au/operations/tools-calculators/coaxial-cable-loss-calculator)
+- [QSL / CO8TW — Coax Calculator](https://www.qsl.net/co8tw/Coax_Calculator.htm)
+- Inspiração conceitual original: M. Walter Maxwell, W2DU, *Reflections III*.
 
-M. Walter Maxwell, W2DU — *Reflections III: Transmission Lines and Antennas*.
+As calculadoras podem usar cadastros e bases de potência diferentes. Os [casos de validação](docs/validation.md) e test/reference.test.cjs explicitam as premissas.
+
+## Desenvolvimento
+
+Node.js 22 ou posterior; sem pacotes npm externos.
+
+```sh
+npm test
+npm run build
+npm run check
+```
+
+- src/cables.js: catálogo e fontes.
+- src/model.js: cálculo puro, validação e unidades, utilizável com require no Node.
+- src/app.js: interface, comparação e animação.
+- src/template.html e src/styles.css: interface clássica responsiva.
+- scripts/build.cjs: geração determinística dos dois HTMLs.
+- test/: física, fabricantes, referências e integração do bundle.
+
+Edite as fontes e regenere os HTMLs. CI executa os testes e detecta saídas desatualizadas. Os testes de integração usam DOM simulado; alterações visuais também precisam de inspeção no navegador. Em ambientes que bloqueiam subprocessos, use node --test --test-isolation=none numa versão de Node que suporte a opção.
 
 ## Licença
 
-Este projeto pode ser distribuído sob a licença MIT.
+MIT, conforme LICENSE. Marcas identificam os produtos de seus fabricantes; links não implicam endosso.
 
-Veja o arquivo `LICENSE` para mais detalhes.

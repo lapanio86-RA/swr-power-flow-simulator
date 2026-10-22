@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWR · Fluxo de potência e perdas em coaxial</title>
+<style>/* {{STYLES}} */</style>
+</head>
+<body>
+<div class="desktop"><main class="app">
+  <header class="app-header">SWR Power Flow Simulator — perdas de linha e balanço de potência</header>
+  <div class="toolbar">Rádio / tuner → linha de transmissão → carga <span>Calculadora offline · dados com referência</span></div>
+  <div class="content grid">
+    <section class="left-column" aria-label="Parâmetros">
+      <fieldset><legend>1. Fonte e frequência</legend>
+        <div class="row">
+          <div><label for="powerW">Potência incidente disponível (W)</label><input id="powerW" inputmode="decimal" value="100"></div>
+          <div><label for="freqMHz">Frequência (MHz)</label><input id="freqMHz" inputmode="decimal" value="30"></div>
+        </div>
+        <p class="note">Fonte ideal casada à impedância de referência. Não simula foldback nem o controle de potência de um rádio real.</p>
+      </fieldset>
+      <fieldset><legend>2. Cabo e atenuação</legend>
+        <label for="cableType">Fabricante / modelo</label><select id="cableType"></select>
+        <div class="row">
+          <div><label for="lengthM">Comprimento</label><input id="lengthM" inputmode="decimal" value="10"></div>
+          <div><label for="lengthUnit">Unidade de comprimento</label><select id="lengthUnit"><option value="m">Metros (m)</option><option value="ft">Pés (ft)</option></select></div>
+        </div>
+        <div class="row">
+          <div><label for="lossDb100m">Atenuação casada nesta frequência</label><input id="lossDb100m" inputmode="decimal" value="0" readonly></div>
+          <div><label for="lossUnit">Unidade de atenuação</label><select id="lossUnit"><option value="100m">dB / 100 m</option><option value="100ft">dB / 100 ft</option></select></div>
+        </div>
+        <div id="customZ0Box" hidden><label for="customZ0">Impedância do cabo personalizado (Ω)</label><input id="customZ0" inputmode="decimal" value="50"></div>
+        <p id="cableMeta" class="note"></p>
+        <p id="cableWarning" class="notice" hidden></p>
+        <details><summary>Tabela / fórmula e origem dos dados</summary>
+          <p id="sourceInfo" class="note"></p>
+          <div class="table-scroll"><table class="data-table"><caption>Atenuação nominal casada — pontos publicados</caption><thead><tr><th>MHz</th><th>dB/100 ft</th><th>dB/100 m</th></tr></thead><tbody id="sourceTable"></tbody></table></div>
+        </details>
+      </fieldset>
+      <fieldset><legend>3. Casamento e SWR</legend>
+        <label for="systemMode">Ligação da fonte</label><select id="systemMode"><option value="tuner">Tuner ideal na entrada da linha</option><option value="direct">Direto: fonte casada absorve o retorno</option></select>
+        <p id="modeNote" class="note"></p>
+        <div id="radioSWRBox"><label for="radioSWR">SWR residual antes do tuner</label><input id="radioSWR" inputmode="decimal" value="1"></div>
+        <label for="swrReference">Referência do SWR na linha</label><select id="swrReference"><option value="load">Na carga / antena</option><option value="line">Na entrada do cabo</option></select>
+        <label for="swrInput">SWR (≥ 1)</label><input id="swrInput" inputmode="decimal" value="2">
+      </fieldset>
+      <div class="buttons-line"><button id="calculateButton" type="button">Calcular</button><button id="animateButton" type="button">Animar</button><button id="resetButton" type="button">Restaurar</button></div>
+      <p class="note">Aceita vírgula ou ponto decimal. Tabelas são específicas do modelo, não de qualquer cabo com a mesma designação RG.</p>
+    </section>
+    <section class="right-column" aria-label="Resultados">
+      <p id="errorMessage" role="alert" class="error" hidden></p>
+      <div id="results">
+        <fieldset><legend>Balanço de potência</legend>
+          <p id="balanceCaption" class="note" role="status" aria-live="polite"></p>
+          <div class="summary-cards">
+            <div class="card"><div class="card-title">Entregue à carga</div><div id="cardAntenna" class="card-value">—</div><div class="card-caption">não é necessariamente radiada</div></div>
+            <div class="card"><div class="card-title">Calor no cabo</div><div id="cardCableHeat" class="card-value">—</div><div class="card-caption">dissipação na linha</div></div>
+            <div class="card"><div class="card-title">Retorno à fonte</div><div id="cardReturned" class="card-value">—</div><div class="card-caption">absorvido pela fonte ideal</div></div>
+            <div class="card"><div class="card-title">Perda real da linha</div><div id="cardLineLoss" class="card-value">—</div><div class="card-caption">entrada líquida → carga</div></div>
+          </div>
+          <div class="energy-bar" aria-hidden="true"><span id="energyLoad"></span><span id="energyHeat"></span><span id="energyReturn"></span></div>
+          <p id="energyLegend" class="note"></p>
+        </fieldset>
+        <fieldset><legend>De onde vêm as perdas?</legend><div id="simpleExplain" class="simple-explain"></div></fieldset>
+        <fieldset><legend>Fluxo didático</legend>
+          <div class="stage"><div class="device">Fonte<span id="radioPowerLabel"></span></div><div class="flow"><div id="wave" aria-hidden="true">→</div><div id="powerLabel"></div></div><div class="device">Carga<span id="antennaSWRLabel"></span></div></div>
+          <div id="timeline" class="timeline" role="status" aria-live="polite"></div>
+        </fieldset>
+        <details open><summary>Resultados e referências de potência</summary><table class="results-table"><tbody id="mainResultsTable"></tbody></table></details>
+        <details><summary>Comparar cabos nas mesmas condições</summary><p class="note">Mesmo comprimento, frequência e SWR na carga. Fonte ideal/tuner e SWR referidos ao Z₀ de cada cabo; trocar por um cabo de 75 Ω não mantém automaticamente o casamento de um sistema de 50 Ω.</p><div class="table-scroll"><table class="data-table"><thead><tr><th>Cabo / Z₀</th><th>dB/100 m</th><th>Perda casada</th><th>Perda da linha c/ SWR</th><th>Eficiência da linha</th></tr></thead><tbody id="comparisonTable"></tbody></table></div></details>
+        <details><summary>Parcelas de energia / primeiras viagens</summary><p id="advancedNote" class="note"></p><div class="table-scroll"><table class="data-table"><thead><tr><th>Viagem</th><th>Ida</th><th>Na carga</th><th>Aceita</th><th>Refletida</th><th>Volta</th></tr></thead><tbody id="tripTable"></tbody></table></div></details>
+      </div>
+      <details><summary>Premissas, fórmulas e referências</summary>
+        <p class="note">Modelo escalar de linha com Z₀ real: Γ = (SWR−1)/(SWR+1), a = 10^(−L/10) e η = a(1−|Γcarga|²)/(1−a²|Γcarga|²). Perda dissipativa adicional = −10 log₁₀(η) − L. O SWR informado deve usar a impedância do cabo como referência.</p>
+        <p class="note">Tuner sem perdas e sem limite de casamento. Parcelas de energia ilustram a série geométrica; não são uma simulação das ondas de RF no tempo. Não inclui fase, impedância complexa, conectores, baluns, temperatura, envelhecimento, perdas do tuner ou limites térmicos. Potência aceita na carga não é eficiência de radiação.</p>
+        <p class="note">Exemplos de calculadoras: <a href="https://portal.powertec.com.au/operations/tools-calculators/coaxial-cable-loss-calculator" target="_blank" rel="noopener">Powertec</a> · <a href="https://www.qsl.net/co8tw/Coax_Calculator.htm" target="_blank" rel="noopener">QSL / CO8TW</a>. Cadastros e referência de potência podem diferir. Dados numéricos dos cabos: fichas do fabricante mostradas na seção do cabo.</p>
+      </details>
+    </section>
+  </div>
+  <footer class="formula-bar">Potência incidente = carga + calor na linha + retorno à fonte. Potência refletida não é, por si só, calor no cabo.</footer>
+</main></div>
+<script>/* {{CABLES}} */
+/* {{MODEL}} */
+/* {{APP}} */</script>
+</body>
+</html>

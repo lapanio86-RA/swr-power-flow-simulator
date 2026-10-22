@@ -1,0 +1,41 @@
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font:12px Tahoma,Verdana,Arial,sans-serif;color:#161616;background:#73858d}
+.desktop{padding:16px}
+.app{max-width:1400px;margin:auto;background:#d4d0c8;border:2px outset #f6f3e9}
+.app-header{background:#244c73;color:white;font-weight:bold;padding:9px 11px;font-size:13px}
+.toolbar{padding:7px 10px;border-bottom:1px solid #929087;font-size:11px}.toolbar span{float:right}
+.content{padding:12px}.grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:12px;align-items:start}
+.left-column,.right-column{min-width:0}
+fieldset,details{min-width:0;border:2px groove #f5f2e8;background:#e9e6dc;margin:0 0 12px;padding:10px}
+legend,summary{color:#173d61;font-weight:bold}legend{padding:0 6px}summary{cursor:pointer}
+label{display:block;margin:8px 0 4px;font-size:11px;line-height:1.3}
+input,select,button{font:12px Tahoma,Verdana,Arial,sans-serif;border-radius:0}
+input,select{width:100%;min-width:0;background:#fff;padding:5px;border:2px inset #fff;color:#111}
+input[readonly]{background:#dedbd3;color:#333}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+button{padding:6px 12px;cursor:pointer;border:2px outset #f4f2e8;background:#d4d0c8;color:#111}
+button:active{border-style:inset}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #345b7c;outline-offset:2px}
+.buttons-line{display:flex;gap:8px;flex-wrap:wrap}
+.note{font-size:11px;color:#343434;line-height:1.5;margin:8px 0}
+.notice{background:#fff9d9;border:1px solid #ad9769;padding:7px;font-size:11px;line-height:1.4}
+.error{background:#fff1e8;border:2px solid #a14a35;padding:10px;color:#782318;font-weight:bold;line-height:1.5}
+[hidden]{display:none!important}
+.summary-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.card{background:#fff;border:2px inset #f4f2e8;padding:8px}.card-title{color:#173d61;font-weight:bold;font-size:11px;min-height:28px}
+.card-value{font-size:18px;font-weight:bold;margin:4px 0;white-space:nowrap}.card-caption{font-size:10px;line-height:1.4;color:#4b4b4b}
+.energy-bar{display:flex;height:17px;border:1px solid #666;margin-top:12px;background:#ddd}
+#energyLoad{background:#617e56}#energyHeat{background:#ad7548}#energyReturn{background:#637d94}
+.simple-explain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.step-box{padding:8px;background:#fff;border:1px solid #aaa;line-height:1.45}.step-title{font-weight:bold;color:#173d61;margin-bottom:5px}
+.stage{display:flex;align-items:center;gap:8px;background:#fff;border:2px inset #fff;padding:12px;min-height:110px}
+.device{width:100px;flex-shrink:0;text-align:center;padding:10px 5px;background:#d4d0c8;border:2px outset white;font-weight:bold}.device span{display:block;font-size:10px;font-weight:normal;margin-top:6px}
+.flow{min-width:0;flex:1;text-align:center;font-size:11px;line-height:1.4}#wave{font-size:24px;color:#284d6b}#powerLabel{overflow-wrap:anywhere}
+.timeline{white-space:pre-line;padding:8px;border:1px solid #aaa;margin-top:7px;background:#fffce5;line-height:1.5;min-height:55px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;background:white}
+th,td{border:1px solid #aaa;padding:6px;text-align:left;line-height:1.4}th{background:#d4d0c8;font-weight:normal}
+.results-table th{width:55%}.results-table td{text-align:right}.table-scroll{overflow-x:auto;max-height:340px}
+.data-table th{position:sticky;top:0}.data-table td:not(:first-child){text-align:right;white-space:nowrap}.data-table caption{text-align:left;padding:4px;color:#333}
+.formula-bar{border-top:1px solid #aaa;padding:9px 12px;background:#e9e6dc;color:#173d61;font-size:11px;line-height:1.5}
+a{color:#163d80}#sourceInfo{overflow-wrap:anywhere}
+@media(max-width:1100px){.summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){.grid{grid-template-columns:minmax(0,1fr)}.desktop{padding:6px}.toolbar span{display:none}.content{padding:8px}}
+@media(max-width:420px){.simple-explain{grid-template-columns:1fr}.stage{padding:6px;gap:4px}.device{width:72px}.card-value{font-size:16px}}
